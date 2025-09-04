@@ -803,7 +803,10 @@ function serializeElementNode(
     const imageHeight = image.naturalHeight;
     const imageWidth = image.naturalWidth;
 
+    console.log('handling inline image', image, imageSrc);
+
     const inlineImageCleanup = () => {
+      console.log('cleaning up', imageSrc);
       overrideImage = null;
     };
 
@@ -821,8 +824,12 @@ function serializeElementNode(
           dataURLOptions.quality,
         );
       } catch (err) {
+        console.log('detected inline image error', err, imageSrc);
         if (image.crossOrigin !== 'anonymous') {
+          console.log('crossOrigin is not anonymous', imageSrc);
           if (shouldTryAnonymousFetchingOnCorsError()) {
+            console.log('overriding image', imageSrc);
+
             overrideImage = new Image();
 
             overrideImage.src = imageSrc;
