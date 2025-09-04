@@ -802,7 +802,10 @@ function serializeElementNode(
     const imageHeight = image.naturalHeight;
     const imageWidth = image.naturalWidth;
 
+    let hasRetried = false;
+
     const inlineImageCleanup = () => {
+      if (!hasRetried) return;
       //@ts-expect-error
       image = null;
     };
@@ -829,6 +832,8 @@ function serializeElementNode(
             image.crossOrigin = 'anonymous';
             image.height = imageHeight;
             image.width = imageWidth;
+
+            hasRetried = true;
 
             if (image.complete && image.naturalWidth !== 0) {
               recordInlineImage(); // too early due to image reload
