@@ -794,24 +794,21 @@ function serializeElementNode(
       canvasCtx = canvasService.getContext('2d');
     }
 
-    let image = n as HTMLImageElement;
+    const image = n as HTMLImageElement;
+    let overrideImage: HTMLImageElement | null = null;
 
     const imageSrc: string =
-      image.currentSrc || image.getAttribute('src') || '<unknown-src>';
+      (image.currentSrc || image.getAttribute('src') || '<unknown-src>') + '';
 
     const imageHeight = image.naturalHeight;
     const imageWidth = image.naturalWidth;
 
-    let hasRetried = false;
-
     const inlineImageCleanup = () => {
-      if (!hasRetried) return;
-      //@ts-expect-error
-      image = null;
+      overrideImage = null;
     };
 
     const recordInlineImage = () => {
-      image.removeEventListener('error', onImageLoadError);
+      (overrideImage ?? image).removeEventListener('error', onImageLoadError);
 
       try {
         canvasService!.width = imageWidth;
@@ -826,19 +823,22 @@ function serializeElementNode(
       } catch (err) {
         if (image.crossOrigin !== 'anonymous') {
           if (shouldTryAnonymousFetchingOnCorsError()) {
-            image = new Image();
-            hasRetried = true;
+            overrideImage = new Image();
 
-            image.src = imageSrc;
-            image.crossOrigin = 'anonymous';
-            image.height = imageHeight;
-            image.width = imageWidth;
+            overrideImage.src = imageSrc;
+            overrideImage.crossOrigin = 'anonymous';
+            overrideImage.height = imageHeight;
+            overrideImage.width = imageWidth;
 
-            if (image.complete && image.naturalWidth !== 0) {
+            if (overrideImage.complete && overrideImage.naturalWidth !== 0) {
               recordInlineImage(); // too early due to image reload
             } else {
-              image.addEventListener('load', recordInlineImage, { once: true });
-              image.addEventListener('error', onImageLoadError, { once: true });
+              overrideImage.addEventListener('load', recordInlineImage, {
+                once: true,
+              });
+              overrideImage.addEventListener('error', onImageLoadError, {
+                once: true,
+              });
             }
 
             return;
@@ -854,7 +854,7 @@ function serializeElementNode(
     };
 
     const onImageLoadError = () => {
-      image.removeEventListener('load', recordInlineImage);
+      (overrideImage ?? image).removeEventListener('load', recordInlineImage);
       inlineImageCleanup();
     };
 
