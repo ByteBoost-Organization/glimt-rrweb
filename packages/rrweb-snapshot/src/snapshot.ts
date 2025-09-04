@@ -827,13 +827,12 @@ function serializeElementNode(
         if (image.crossOrigin !== 'anonymous') {
           if (shouldTryAnonymousFetchingOnCorsError()) {
             image = new Image();
+            hasRetried = true;
 
             image.src = imageSrc;
             image.crossOrigin = 'anonymous';
             image.height = imageHeight;
             image.width = imageWidth;
-
-            hasRetried = true;
 
             if (image.complete && image.naturalWidth !== 0) {
               recordInlineImage(); // too early due to image reload
