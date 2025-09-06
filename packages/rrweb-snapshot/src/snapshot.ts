@@ -796,6 +796,7 @@ function serializeElementNode(
 
     const image = n as HTMLImageElement;
     let overrideImage: HTMLImageElement | null = null;
+    let calls = 0;
 
     const imageSrc: string =
       (image.currentSrc || image.getAttribute('src') || '<unknown-src>') + '';
@@ -808,6 +809,9 @@ function serializeElementNode(
     };
 
     const recordInlineImage = () => {
+      calls++;
+      if(calls > 3) return;
+
       (overrideImage ?? image).removeEventListener('error', onImageLoadError);
 
       try {
