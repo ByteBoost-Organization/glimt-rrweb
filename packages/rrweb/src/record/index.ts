@@ -42,6 +42,7 @@ import { CanvasManager } from './observers/canvas/canvas-manager';
 import ProcessedNodeManager from './processed-node-manager';
 import { ShadowDomManager } from './shadow-dom-manager';
 import { StylesheetManager } from './stylesheet-manager';
+import { isDebug } from './custom-helpers';
 
 let wrappedEmit!: (e: eventWithoutTime, isCheckout?: boolean) => void;
 
@@ -60,7 +61,7 @@ try {
     document.body.removeChild(cleanFrame);
   }
 } catch (err) {
-  console.debug('Unable to override Array.from', err);
+  if (isDebug()) console.debug('Unable to override Array.from', err);
 }
 
 const mirror = createMirror();
@@ -415,7 +416,8 @@ function record<T = eventWithTime>(
     });
 
     if (!node) {
-      return console.warn('Failed to snapshot the document');
+      if (isDebug()) console.warn('Failed to snapshot the document');
+      return;
     }
 
     wrappedEmit(
@@ -581,7 +583,10 @@ function record<T = eventWithTime>(
         handlers.push(observe(iframeEl.contentDocument!));
       } catch (error) {
         // TODO: handle internal error
-        console.warn(error);
+        if (isDebug()) {
+          console.warn('internal error');
+          console.warn(error);
+        }
       }
     });
 
@@ -689,7 +694,10 @@ function record<T = eventWithTime>(
     };
   } catch (error) {
     // TODO: handle internal error
-    console.warn(error);
+    if (isDebug()) {
+      console.warn('internal error1');
+      console.warn(error);
+    }
   }
 }
 

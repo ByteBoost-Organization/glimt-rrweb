@@ -32,7 +32,10 @@ import {
   stringifyStylesheet,
   toLowerCase,
 } from './utils';
-import { shouldTryAnonymousFetchingOnCorsError } from './customHelpers';
+import {
+  isDebug,
+  shouldTryAnonymousFetchingOnCorsError,
+} from './customHelpers';
 
 let _id = 1;
 const tagNameRegex = new RegExp('[^a-z0-9-_:]');
@@ -848,9 +851,10 @@ function serializeElementNode(
             return;
           }
         } else {
-          console.warn(
-            `Cannot inline img src=${imageSrc}! Error: ${err as string}`,
-          );
+          if (isDebug())
+            console.warn(
+              `Cannot inline img src=${imageSrc}! Error: ${err as string}`,
+            );
         }
       }
 
@@ -1126,8 +1130,8 @@ export function serializeNodeWithId(
     cssCaptured,
   });
   if (!_serializedNode) {
-    // TODO: dev only
-    console.warn(n, 'not serialized');
+    if (isDebug()) console.warn(n, 'not serialized');
+
     return null;
   }
 
