@@ -336,6 +336,12 @@ export class Replayer {
 
       if (this.lastMouseDownEvent) {
         const [target, event] = this.lastMouseDownEvent;
+        console.log(
+          'dispatching last mouse down event',
+          event,
+          'on target',
+          target,
+        );
         target.dispatchEvent(event);
       }
       this.lastMouseDownEvent = null;
@@ -1246,6 +1252,12 @@ export class Replayer {
                 this.mouse.classList.remove('touch-active');
               } else {
                 // for MouseDown & MouseUp also invoke default behavior
+                console.log(
+                  'wants to dispatch click event',
+                  event,
+                  'on target',
+                  target,
+                );
                 target.dispatchEvent(event);
               }
             }
@@ -1258,6 +1270,12 @@ export class Replayer {
             }
             break;
           default:
+            console.log(
+              'wants to dispatch default click case event',
+              event,
+              'on target',
+              target,
+            );
             target.dispatchEvent(event);
         }
         break;
