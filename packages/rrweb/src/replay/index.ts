@@ -1195,11 +1195,13 @@ export class Replayer {
         switch (d.type) {
           case MouseInteractions.Blur:
             if ('blur' in (target as HTMLElement)) {
+              console.log('blurring target', target);
               (target as HTMLElement).blur();
             }
             break;
           case MouseInteractions.Focus:
             if (triggerFocus && (target as HTMLElement).focus) {
+              console.log('focusing target', target);
               (target as HTMLElement).focus({
                 preventScroll: true,
               });
