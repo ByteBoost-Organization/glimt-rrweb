@@ -1258,7 +1258,7 @@ export class Replayer {
                   'on target',
                   target,
                 );
-                target.dispatchEvent(event);
+                // target.dispatchEvent(event);
               }
             }
             break;
