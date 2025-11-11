@@ -1,4 +1,5 @@
 import { takeFullSnapshot } from '..';
+import { debugLog } from './custom-helpers';
 
 class StormSnapshotManager {
   static instance: StormSnapshotManager;
@@ -45,11 +46,11 @@ class StormSnapshotManager {
 
   private takeSnapshot() {
     if (Date.now() - this.lastFullSnapshot < this.intervalBetweenSnapshots) {
-      console.log('StormSnapshotManager, takeSnapshot: too soon');
+      debugLog('StormSnapshotManager, takeSnapshot: too soon');
       return;
     }
 
-    console.log('StormSnapshotManager, takeSnapshot: taking full snapshot');
+    debugLog('StormSnapshotManager, takeSnapshot: taking full snapshot');
 
     takeFullSnapshot();
     this.lastFullSnapshot = Date.now();

@@ -34,6 +34,7 @@ import {
 } from '../utils';
 import dom from '@rrweb/utils';
 import stormSnapshotManager from './storm-snapshot-manager';
+import { debugLog, isDebug } from './custom-helpers';
 
 type DoubleLinkedListNode = {
   previous: DoubleLinkedListNode | null;
@@ -140,16 +141,16 @@ interface StormBatch {
   mutations: mutationRecord[];
 }
 
-// function makeid(length = 8) {
-//   var result = '';
-//   var characters =
-//     'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-//   var charactersLength = characters.length;
-//   for (var i = 0; i < length; i++) {
-//     result += characters.charAt(Math.floor(Math.random() * charactersLength));
-//   }
-//   return result;
-// }
+const characters =
+  'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+
+function makeid(length = 8) {
+  let result = '';
+  for (let i = 0; i < length; i++) {
+    result += characters.charAt(Math.floor(Math.random() * characters.length));
+  }
+  return result;
+}
 
 /**
  * controls behaviour of a MutationObserver
@@ -211,7 +212,7 @@ export default class MutationBuffer {
   private processedNodeManager: observerParam['processedNodeManager'];
   private unattachedDoc: HTMLDocument;
 
-  // private bufId: string = makeid();
+  private bufId: string = isDebug() ? makeid() : '';
 
   public init(options: MutationBufferParam) {
     (
@@ -293,11 +294,11 @@ export default class MutationBuffer {
     const time = Date.now();
 
     if (this.stormInfo == null) {
-      // console.log(
-      //   'detected probable mutation storm start',
-      //   'buffer id:',
-      //   this.bufId,
-      // );
+      debugLog(
+        'detected probable mutation storm start',
+        'buffer id:',
+        this.bufId,
+      );
       this.stormInfo = {
         startedAt: time,
         totalMutations: 0,
@@ -337,18 +338,18 @@ export default class MutationBuffer {
 
     const { stormExceededLimit } = this.stormInfo;
 
-    // console.log(
-    //   'mutation storm finished',
-    //   'totalMutations:',
-    //   this.stormInfo.totalMutations,
-    //   'stormExceededLimit:',
-    //   stormExceededLimit,
-    //   'storm duration:',
-    //   Date.now() - this.stormInfo.startedAt,
-    //   'ms',
-    //   'buffer id:',
-    //   this.bufId,
-    // );
+    debugLog(
+      'mutation storm finished',
+      'totalMutations:',
+      this.stormInfo.totalMutations,
+      'stormExceededLimit:',
+      stormExceededLimit,
+      'storm duration:',
+      Date.now() - this.stormInfo.startedAt,
+      'ms',
+      'buffer id:',
+      this.bufId,
+    );
 
     clearTimeout(this.stormInfo.timeout);
 
@@ -385,6 +386,14 @@ export default class MutationBuffer {
     for (const mut of muts) {
       this.processMutation(mut);
     }
+
+    debugLog(
+      'processed mutations from storm',
+      'overrideStorm:',
+      overrideStorm,
+      'buffer id:',
+      this.bufId,
+    );
 
     // console.log(
     //   muts.length,

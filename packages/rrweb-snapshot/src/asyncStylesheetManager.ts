@@ -7,7 +7,7 @@ import { stringifyStylesheet } from './utils';
 //(but it's main purpose is just safe-keeping so we don't overflow the page with cloned links)
 const CLEANUP_DEBOUNCE_TIME = 1000 * 30;
 
-const DATA_ATTRIBUTE_CLONED_NAME = 'data-rrweb-link-cloned';
+const DATA_ATTRIBUTE_CLONED_NAME = 'data-recapt-rrweb-link-cloned';
 
 const DISALLOWED_EXTENSIONS = [
   // Fonts

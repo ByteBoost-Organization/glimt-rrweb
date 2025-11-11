@@ -9,3 +9,8 @@ export const isDebug = () => {
     ? window._rrweb_is_debug
     : false;
 };
+
+export const debugLog = (...args: any[]) => {
+  if (!isDebug()) return;
+  console.log('[recapt:rrweb]', ...args);
+};
