@@ -290,6 +290,12 @@ export default class MutationBuffer {
     mutationLimit: 800, //was 1500
   };
 
+  private rollingMutTracker = {
+    accumlativeMuts: 0,
+    ts: -1,
+    interval: 10,
+  };
+
   private handleStormMutations = (muts: mutationRecord[]) => {
     const time = Date.now();
 
@@ -374,11 +380,43 @@ export default class MutationBuffer {
     overrideStorm = false,
   ) => {
     console.log('muts', muts.length);
-    if (
-      !overrideStorm &&
-      (this.stormInfo != null || muts.length >= this.stormSettings.batchSize)
-    ) {
-      this.handleStormMutations(muts);
+    if (!overrideStorm) {
+      if (
+        this.stormInfo != null ||
+        muts.length >= this.stormSettings.batchSize
+      ) {
+        this.handleStormMutations(muts);
+      }
+
+      if (this.stormInfo == null) {
+        const now = Date.now();
+
+        if (this.rollingMutTracker.ts === -1) {
+          this.rollingMutTracker.accumlativeMuts = muts.length;
+        } else {
+          if (
+            now - this.rollingMutTracker.ts <=
+            this.rollingMutTracker.interval
+          ) {
+            this.rollingMutTracker.accumlativeMuts += muts.length;
+
+            if (
+              this.rollingMutTracker.accumlativeMuts >=
+              this.stormSettings.batchSize
+            ) {
+              debugLog(`Mutation storm through rolling detected.`);
+              this.handleStormMutations(muts);
+              this.rollingMutTracker.accumlativeMuts = 0;
+              this.rollingMutTracker.ts = -1;
+            }
+          } else {
+            this.rollingMutTracker.accumlativeMuts = 0;
+          }
+        }
+
+        this.rollingMutTracker.ts = now;
+      }
+
       return;
     }
 
