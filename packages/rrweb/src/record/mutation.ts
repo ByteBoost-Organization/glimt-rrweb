@@ -383,11 +383,11 @@ export default class MutationBuffer {
     muts: mutationRecord[],
     overrideStorm = false,
   ) => {
-    console.log(
-      'muts',
-      muts.length,
-      JSON.parse(JSON.stringify(this.rollingMutTracker)),
-    );
+    // console.log(
+    //   'muts',
+    //   muts.length,
+    //   JSON.parse(JSON.stringify(this.rollingMutTracker)),
+    // );
 
     if (!overrideStorm) {
       const isStorming = mutationRateLimiter.isStorming(muts.length);

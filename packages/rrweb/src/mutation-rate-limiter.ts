@@ -4,16 +4,24 @@ import { debugLog } from './record/custom-helpers';
 
 //even mutations on different doms and whatnot
 class MutationRateLimiter {
+  static instance: MutationRateLimiter;
+
   mutTracker: {
     muts: number;
     ts: number;
   };
 
   interval = 50;
-  limit = 150;
+  limit = 100;
   inGlobalStorm = false;
 
   constructor() {
+    if (MutationRateLimiter.instance) {
+      return MutationRateLimiter.instance;
+    }
+
+    MutationRateLimiter.instance = this;
+
     debugLog(`MutationRateLimiter, init`);
     this.reset();
   }
