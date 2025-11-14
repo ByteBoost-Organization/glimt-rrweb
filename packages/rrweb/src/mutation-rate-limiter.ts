@@ -1,7 +1,6 @@
-//Note: this will keep track of all mutationbuffers, which means ALL mutations
-
 import { debugLog } from './record/custom-helpers';
 
+//Note: this will keep track of all mutationbuffers, which means ALL mutations
 //even mutations on different doms and whatnot
 class MutationRateLimiter {
   static instance: MutationRateLimiter;
@@ -42,6 +41,8 @@ class MutationRateLimiter {
         debugLog(`MutationRateLimiter, detected global storm over`);
         return false;
       }
+
+      this.mutTracker.ts = now;
       return true;
     }
 
