@@ -1192,6 +1192,8 @@ export function serializeNodeWithId(
       return {
         key,
         avg: values.reduce((a, b) => a + b, 0) / values.length,
+        max: Math.max(...values),
+        min: Math.min(...values),
       };
     });
 
