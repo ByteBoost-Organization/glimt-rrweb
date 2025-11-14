@@ -36,9 +36,13 @@ class MutationRateLimiter {
     const now = Date.now();
 
     if (this.inGlobalStorm) {
+      this.mutTracker.muts += muts;
+
       if (now - this.mutTracker.ts > this.interval) {
         this.inGlobalStorm = false;
-        debugLog(`MutationRateLimiter, detected global storm over`);
+        debugLog(
+          `MutationRateLimiter, detected global storm over. Total mutations stormed: ${this.mutTracker.muts}`,
+        );
         return false;
       }
 
