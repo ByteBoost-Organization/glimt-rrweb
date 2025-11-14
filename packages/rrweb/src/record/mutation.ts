@@ -35,6 +35,7 @@ import {
 import dom from '@rrweb/utils';
 import stormSnapshotManager from './storm-snapshot-manager';
 import { debugLog, isDebug } from './custom-helpers';
+import { mutationRateLimiter } from '../mutation-rate-limiter';
 
 type DoubleLinkedListNode = {
   previous: DoubleLinkedListNode | null;
@@ -296,7 +297,10 @@ export default class MutationBuffer {
     interval: 50,
   };
 
-  private handleStormMutations = (muts: mutationRecord[]) => {
+  private handleStormMutations = (
+    muts: mutationRecord[],
+    canFinishStorm = true,
+  ) => {
     const time = Date.now();
 
     if (this.stormInfo == null) {
@@ -327,7 +331,7 @@ export default class MutationBuffer {
 
     clearTimeout(this.stormInfo.timeout);
 
-    if (muts.length < this.stormSettings.batchSize) {
+    if (canFinishStorm && muts.length < this.stormSettings.batchSize) {
       //if we received a small batch, the storm is over
       this.handleStormFinish();
     } else {
@@ -384,7 +388,15 @@ export default class MutationBuffer {
       muts.length,
       JSON.parse(JSON.stringify(this.rollingMutTracker)),
     );
+
     if (!overrideStorm) {
+      const isStorming = mutationRateLimiter.isStorming(muts.length);
+
+      if (isStorming) {
+        this.handleStormMutations(muts, false);
+        return;
+      }
+
       if (
         this.stormInfo != null ||
         muts.length >= this.stormSettings.batchSize
@@ -392,34 +404,34 @@ export default class MutationBuffer {
         this.handleStormMutations(muts);
       }
 
-      if (this.stormInfo == null) {
-        const now = Date.now();
+      // if (this.stormInfo == null) {
+      //   // const now = Date.now();
 
-        if (this.rollingMutTracker.ts === -1) {
-          this.rollingMutTracker.accumlativeMuts = muts.length;
-        } else {
-          if (
-            now - this.rollingMutTracker.ts <=
-            this.rollingMutTracker.interval
-          ) {
-            this.rollingMutTracker.accumlativeMuts += muts.length;
+      //   // if (this.rollingMutTracker.ts === -1) {
+      //   //   this.rollingMutTracker.accumlativeMuts = muts.length;
+      //   // } else {
+      //   //   if (
+      //   //     now - this.rollingMutTracker.ts <=
+      //   //     this.rollingMutTracker.interval
+      //   //   ) {
+      //   //     this.rollingMutTracker.accumlativeMuts += muts.length;
 
-            if (
-              this.rollingMutTracker.accumlativeMuts >=
-              this.stormSettings.batchSize
-            ) {
-              debugLog(`Mutation storm through rolling detected.`);
-              this.handleStormMutations(muts);
-              this.rollingMutTracker.accumlativeMuts = 0;
-              this.rollingMutTracker.ts = -1;
-            }
-          } else {
-            this.rollingMutTracker.accumlativeMuts = 0;
-          }
-        }
+      //   //     if (
+      //   //       this.rollingMutTracker.accumlativeMuts >=
+      //   //       this.stormSettings.batchSize
+      //   //     ) {
+      //   //       debugLog(`Mutation storm through rolling detected.`);
+      //   //       this.handleStormMutations(muts);
+      //   //       this.rollingMutTracker.accumlativeMuts = 0;
+      //   //       this.rollingMutTracker.ts = -1;
+      //   //     }
+      //   //   } else {
+      //   //     this.rollingMutTracker.accumlativeMuts = 0;
+      //   //   }
+      //   // }
 
-        this.rollingMutTracker.ts = now;
-      }
+      //   // this.rollingMutTracker.ts = now;
+      // }
 
       return;
     }
