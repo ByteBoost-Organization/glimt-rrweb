@@ -813,7 +813,7 @@ function serializeElementNode(
 
     const recordInlineImage = () => {
       calls++;
-      if(calls > 3) return;
+      if (calls > 3) return;
 
       (overrideImage ?? image).removeEventListener('error', onImageLoadError);
 
@@ -1037,6 +1037,14 @@ function slimDOMExcluded(
   return false;
 }
 
+const debugging: {
+  index: number;
+  store: Record<string, number[]>;
+} = {
+  index: 0,
+  store: {},
+};
+
 export function serializeNodeWithId(
   n: Node,
   options: {
@@ -1073,6 +1081,7 @@ export function serializeNodeWithId(
     cssCaptured?: boolean;
   },
 ): serializedNodeWithId | null {
+  const start = Date.now();
   const {
     doc,
     mirror,
@@ -1370,6 +1379,28 @@ export function serializeNodeWithId(
       },
       stylesheetLoadTimeout,
     );
+  }
+
+  debugging.index++;
+  const took = Date.now() - start;
+  if (!(n.nodeName in debugging.store)) {
+    debugging.store[n.nodeName] = [];
+  }
+
+  debugging.store[n.nodeName].push(took);
+
+  if (debugging.index % 100 === 0) {
+    debugging.index = 0;
+    const avgs = Object.entries(debugging.store).map(([key, values]) => {
+      return {
+        key,
+        avg: values.reduce((a, b) => a + b, 0) / values.length,
+      };
+    });
+
+    console.log('last 100 avgs', JSON.parse(JSON.stringify(avgs)));
+
+    debugging.store = {};
   }
 
   return serializedNode;
