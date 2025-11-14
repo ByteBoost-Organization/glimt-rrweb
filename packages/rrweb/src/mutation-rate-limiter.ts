@@ -43,6 +43,7 @@ class MutationRateLimiter {
         debugLog(
           `MutationRateLimiter, detected global storm over. Total mutations stormed: ${this.mutTracker.muts}`,
         );
+        this.reset();
         return false;
       }
 
@@ -58,7 +59,6 @@ class MutationRateLimiter {
 
         if (this.mutTracker.muts >= this.limit) {
           this.inGlobalStorm = true;
-          this.reset();
           debugLog(`MutationRateLimiter, detected global rolling storm`);
           return true;
         }
