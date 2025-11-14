@@ -285,7 +285,7 @@ export default class MutationBuffer {
   } = null;
 
   private stormSettings = {
-    batchSize: 150, //was 300
+    batchSize: 50, //was 300
     timeout: 30, //was 50
     mutationLimit: 800, //was 1500
   };
@@ -373,6 +373,7 @@ export default class MutationBuffer {
     muts: mutationRecord[],
     overrideStorm = false,
   ) => {
+    console.log('muts', muts.length);
     if (
       !overrideStorm &&
       (this.stormInfo != null || muts.length >= this.stormSettings.batchSize)
