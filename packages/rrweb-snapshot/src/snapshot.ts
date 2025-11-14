@@ -1197,8 +1197,8 @@ export function serializeNodeWithId(
       };
     });
 
-    console.log('last 5000 avgs');
-    console.table(avgs);
+    // console.log('last 5000 avgs');
+    // console.table(avgs);
 
     debugging.store = {};
   }

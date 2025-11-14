@@ -293,7 +293,7 @@ export default class MutationBuffer {
   private rollingMutTracker = {
     accumlativeMuts: 0,
     ts: -1,
-    interval: 10,
+    interval: 50,
   };
 
   private handleStormMutations = (muts: mutationRecord[]) => {
@@ -379,7 +379,11 @@ export default class MutationBuffer {
     muts: mutationRecord[],
     overrideStorm = false,
   ) => {
-    console.log('muts', muts.length);
+    console.log(
+      'muts',
+      muts.length,
+      JSON.parse(JSON.stringify(this.rollingMutTracker)),
+    );
     if (!overrideStorm) {
       if (
         this.stormInfo != null ||
