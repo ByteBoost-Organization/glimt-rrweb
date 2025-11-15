@@ -43,6 +43,7 @@ import ProcessedNodeManager from './processed-node-manager';
 import { ShadowDomManager } from './shadow-dom-manager';
 import { StylesheetManager } from './stylesheet-manager';
 import { debugLog, isDebug } from './custom-helpers';
+import { observeManager } from './observe-manager';
 
 let wrappedEmit!: (e: eventWithoutTime, isCheckout?: boolean) => void;
 
@@ -580,6 +581,7 @@ function record<T = eventWithTime>(
 
     iframeManager.addLoadListener((iframeEl) => {
       try {
+        if (!observeManager.canObserveDoc(iframeEl.contentDocument!)) return;
         debugLog('adding observers for new iframe', iframeEl);
         handlers.push(observe(iframeEl.contentDocument!));
       } catch (error) {
@@ -690,6 +692,7 @@ function record<T = eventWithTime>(
     return () => {
       handlers.forEach((h) => h());
       processedNodeManager.destroy();
+      observeManager.destroy();
       recording = false;
       unregisterErrorHandler();
     };

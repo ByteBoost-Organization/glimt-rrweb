@@ -53,7 +53,6 @@ import type {
 import MutationBuffer from './mutation';
 import { callbackWrapper } from './error-handler';
 import dom, { mutationObserverCtor } from '@rrweb/utils';
-import { debugLog } from './custom-helpers';
 
 export const mutationBuffers: MutationBuffer[] = [];
 
@@ -1309,7 +1308,6 @@ export function initObservers(
   mergeHooks(o, hooks);
   let mutationObserver: MutationObserver | undefined;
   if (o.recordDOM) {
-    debugLog('adding mutation observer in initObservers');
     mutationObserver = initMutationObserver(o, o.doc);
   }
   const mousemoveHandler = initMoveObserver(o);
