@@ -287,7 +287,7 @@ export default class MutationBuffer {
 
   private stormSettings = {
     batchSize: 50, //was 300
-    timeout: 30, //was 50
+    timeout: 50, //was 50
     mutationLimit: 800, //was 1500
   };
 
@@ -339,6 +339,7 @@ export default class MutationBuffer {
 
   private handleStormFinish = () => {
     if (!this.stormInfo) return;
+    if (!mutationRateLimiter.canExitMutationStorm()) return;
 
     const { stormExceededLimit } = this.stormInfo;
 

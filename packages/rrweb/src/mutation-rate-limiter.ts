@@ -105,6 +105,10 @@ class MutationRateLimiter {
     return true;
   }
 
+  public canExitMutationStorm() {
+    return !this.inGlobalStorm;
+  }
+
   public isStorming(muts: number) {
     const now = Date.now();
 
