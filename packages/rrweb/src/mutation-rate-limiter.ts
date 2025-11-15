@@ -3,22 +3,26 @@ import { debugLog } from './record/custom-helpers';
 //Note: this will keep track of all mutationbuffers, which means ALL mutations
 //even mutations on different doms and whatnot
 class MutationRateLimiter {
-  static instance: MutationRateLimiter;
+  private static instance: MutationRateLimiter;
 
-  mutTracker: {
+  private mutTracker: {
     muts: number;
     ts: number;
   };
 
-  exitMutTracker: {
+  private exitMutTracker: {
     muts: number;
     requested: number;
   };
 
-  interval = 50;
-  exitInterval = 100;
-  limit = 100;
-  inGlobalStorm = false;
+  private interval = 50;
+  private exitInterval = 100;
+  private mutThreshold = 100;
+
+  private inGlobalStorm = false;
+
+  private currentStormStartedAt = -1;
+  private stormTimeLimit = 5000;
 
   constructor() {
     if (MutationRateLimiter.instance) {
@@ -31,26 +35,32 @@ class MutationRateLimiter {
     this.reset();
   }
 
-  resetTracker() {
+  private resetTracker() {
     this.mutTracker = {
       muts: 0,
       ts: -1,
     };
   }
 
-  resetExitTracker() {
+  private resetExitTracker() {
     this.exitMutTracker = {
       muts: 0,
       requested: -1,
     };
   }
 
-  reset() {
+  private reset() {
     this.resetTracker();
     this.resetExitTracker();
+    this.currentStormStartedAt = -1;
   }
 
-  handleStormExit(muts: number) {
+  private stormStopped() {
+    this.inGlobalStorm = false;
+    this.reset();
+  }
+
+  private handleStormExit(muts: number) {
     const now = Date.now();
 
     if (this.exitMutTracker.requested === -1) {
@@ -62,7 +72,7 @@ class MutationRateLimiter {
       this.exitMutTracker.muts += muts;
 
       if (now - this.exitMutTracker.requested > this.exitInterval) {
-        if (this.exitMutTracker.muts >= this.limit) {
+        if (this.exitMutTracker.muts >= this.mutThreshold) {
           //continue to storm, do not exit
           debugLog(
             `MutationRateLimiter, exit cooldown failed, continuing with storm`,
@@ -86,9 +96,7 @@ class MutationRateLimiter {
             exitMutTracker: this.exitMutTracker,
           });
 
-          this.inGlobalStorm = false;
-          this.reset();
-
+          this.stormStopped();
           return false;
         }
       }
@@ -101,6 +109,14 @@ class MutationRateLimiter {
     const now = Date.now();
 
     if (this.inGlobalStorm) {
+      if (now - this.currentStormStartedAt > this.stormTimeLimit) {
+        debugLog(
+          `MutationRateLimiter, storm time limit reached, stopping storm`,
+        );
+        this.stormStopped();
+        return false;
+      }
+
       if (now - this.mutTracker.ts > this.interval) {
         return this.handleStormExit(muts);
 
@@ -123,9 +139,10 @@ class MutationRateLimiter {
       if (now - this.mutTracker.ts <= this.interval) {
         this.mutTracker.muts += muts;
 
-        if (this.mutTracker.muts >= this.limit) {
+        if (this.mutTracker.muts >= this.mutThreshold) {
           this.inGlobalStorm = true;
           debugLog(`MutationRateLimiter, detected global rolling storm`);
+          this.currentStormStartedAt = now;
           return true;
         }
       }
