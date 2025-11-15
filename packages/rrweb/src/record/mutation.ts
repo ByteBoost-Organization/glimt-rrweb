@@ -291,6 +291,14 @@ export default class MutationBuffer {
     mutationLimit: 800, //was 1500
   };
 
+  private debounceStormFinish = () => {
+    if (!this.stormInfo) return;
+    this.stormInfo.timeout = setTimeout(
+      this.handleStormFinish,
+      this.stormSettings.timeout,
+    );
+  };
+
   private handleStormMutations = (
     muts: mutationRecord[],
     canFinishStorm = true,
@@ -330,16 +338,16 @@ export default class MutationBuffer {
       this.handleStormFinish();
     } else {
       //otherwise, we'll just debounce: expecting more storm
-      this.stormInfo.timeout = setTimeout(
-        this.handleStormFinish,
-        this.stormSettings.timeout,
-      );
+      this.debounceStormFinish();
     }
   };
 
   private handleStormFinish = () => {
     if (!this.stormInfo) return;
-    if (!mutationRateLimiter.canExitMutationStorm()) return;
+    if (!mutationRateLimiter.canMutationBufferExitMutationStorm()) {
+      this.debounceStormFinish();
+      return;
+    }
 
     const { stormExceededLimit } = this.stormInfo;
 

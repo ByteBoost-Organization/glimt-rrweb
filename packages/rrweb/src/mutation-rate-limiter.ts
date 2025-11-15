@@ -105,7 +105,7 @@ class MutationRateLimiter {
     return true;
   }
 
-  public canExitMutationStorm() {
+  public canMutationBufferExitMutationStorm() {
     return !this.inGlobalStorm;
   }
 
