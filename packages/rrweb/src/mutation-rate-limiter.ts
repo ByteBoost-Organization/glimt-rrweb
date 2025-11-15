@@ -1,4 +1,5 @@
 import { debugLog } from './record/custom-helpers';
+import type MutationBuffer from './record/mutation';
 
 //Note: this will keep track of all mutationbuffers, which means ALL mutations
 //even mutations on different doms and whatnot
@@ -23,6 +24,11 @@ class MutationRateLimiter {
 
   private currentStormStartedAt = -1;
   private stormTimeLimit = 5000;
+
+  private debounceTimeout: ReturnType<typeof setTimeout> | null = null;
+  private debounceTimeoutMs = 250;
+
+  private handleStormFinishMethods: Record<string, VoidFunction> = {};
 
   constructor() {
     if (MutationRateLimiter.instance) {
@@ -55,12 +61,23 @@ class MutationRateLimiter {
     this.currentStormStartedAt = -1;
   }
 
-  private stormStopped() {
+  private stormStopped(stoppedByBuffer?: string) {
     this.inGlobalStorm = false;
     this.reset();
+
+    for (const [bufId, method] of Object.entries(
+      this.handleStormFinishMethods,
+    )) {
+      //the buffer which called this method, which in turn stopped the storm,
+      //will handle its storm finish automatically. we dont want it to run handleStormFinish twice
+      if (bufId === stoppedByBuffer) continue;
+      method();
+    }
+
+    this.handleStormFinishMethods = {};
   }
 
-  private handleStormExit(muts: number) {
+  private handleStormExit(muts: number, bufId: string) {
     const now = Date.now();
 
     if (this.exitMutTracker.requested === -1) {
@@ -96,7 +113,7 @@ class MutationRateLimiter {
             exitMutTracker: this.exitMutTracker,
           });
 
-          this.stormStopped();
+          this.stormStopped(bufId);
           return false;
         }
       }
@@ -105,32 +122,40 @@ class MutationRateLimiter {
     return true;
   }
 
-  public canMutationBufferExitMutationStorm() {
-    return !this.inGlobalStorm;
+  public isInGlobalStorm() {
+    return this.inGlobalStorm;
   }
 
-  public isStorming(muts: number) {
+  private doDebounce() {
+    if (this.debounceTimeout) clearTimeout(this.debounceTimeout);
+    if (!this.inGlobalStorm) return;
+    this.debounceTimeout = setTimeout(() => {
+      this.debounceTimeout = null;
+      this.stormStopped();
+    }, this.debounceTimeoutMs);
+  }
+
+  public isStorming(muts: number, buffer: MutationBuffer) {
+    if (!(buffer.bufId in this.handleStormFinishMethods)) {
+      this.handleStormFinishMethods[buffer.bufId] =
+        buffer.handleStormFinish.bind(buffer);
+    }
+
     const now = Date.now();
 
     if (this.inGlobalStorm) {
+      this.doDebounce();
+
       if (now - this.currentStormStartedAt > this.stormTimeLimit) {
         debugLog(
           `MutationRateLimiter, storm time limit reached, stopping storm`,
         );
-        this.stormStopped();
+        this.stormStopped(buffer.bufId);
         return false;
       }
 
-      if (now - this.mutTracker.ts > this.interval) {
-        return this.handleStormExit(muts);
-
-        // this.inGlobalStorm = false;
-        // debugLog(
-        //   `MutationRateLimiter, detected global storm over. Total mutations stormed: ${this.mutTracker.muts}`,
-        // );
-        // this.reset();
-        // return false;
-      }
+      if (now - this.mutTracker.ts > this.interval)
+        return this.handleStormExit(muts, buffer.bufId);
 
       this.mutTracker.muts += muts;
       this.mutTracker.ts = now;
@@ -147,6 +172,7 @@ class MutationRateLimiter {
           this.inGlobalStorm = true;
           debugLog(`MutationRateLimiter, detected global rolling storm`);
           this.currentStormStartedAt = now;
+          this.doDebounce();
           return true;
         }
       }

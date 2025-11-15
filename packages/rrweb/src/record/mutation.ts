@@ -213,7 +213,7 @@ export default class MutationBuffer {
   private processedNodeManager: observerParam['processedNodeManager'];
   private unattachedDoc: HTMLDocument;
 
-  private bufId: string = isDebug() ? makeid() : '';
+  public bufId = makeid();
 
   public init(options: MutationBufferParam) {
     (
@@ -293,6 +293,7 @@ export default class MutationBuffer {
 
   private debounceStormFinish = () => {
     if (!this.stormInfo) return;
+    if (mutationRateLimiter.isInGlobalStorm()) return;
     this.stormInfo.timeout = setTimeout(
       this.handleStormFinish,
       this.stormSettings.timeout,
@@ -314,9 +315,9 @@ export default class MutationBuffer {
       this.stormInfo = {
         startedAt: time,
         totalMutations: 0,
-        timeout: setTimeout(this.handleStormFinish, this.stormSettings.timeout),
         stormExceededLimit: false,
       };
+      if (canFinishStorm) this.debounceStormFinish();
     }
 
     this.stormInfo.totalMutations += muts.length;
@@ -342,12 +343,8 @@ export default class MutationBuffer {
     }
   };
 
-  private handleStormFinish = () => {
+  public handleStormFinish = () => {
     if (!this.stormInfo) return;
-    if (!mutationRateLimiter.canMutationBufferExitMutationStorm()) {
-      this.debounceStormFinish();
-      return;
-    }
 
     const { stormExceededLimit } = this.stormInfo;
 
@@ -387,7 +384,7 @@ export default class MutationBuffer {
     overrideStorm = false,
   ) => {
     if (!overrideStorm) {
-      const isStorming = mutationRateLimiter.isStorming(muts.length);
+      const isStorming = mutationRateLimiter.isStorming(muts.length, this);
 
       if (isStorming) {
         this.handleStormMutations(muts, false);
