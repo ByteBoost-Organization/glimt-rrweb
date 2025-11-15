@@ -42,7 +42,7 @@ import { CanvasManager } from './observers/canvas/canvas-manager';
 import ProcessedNodeManager from './processed-node-manager';
 import { ShadowDomManager } from './shadow-dom-manager';
 import { StylesheetManager } from './stylesheet-manager';
-import { isDebug } from './custom-helpers';
+import { debugLog, isDebug } from './custom-helpers';
 
 let wrappedEmit!: (e: eventWithoutTime, isCheckout?: boolean) => void;
 
@@ -580,6 +580,7 @@ function record<T = eventWithTime>(
 
     iframeManager.addLoadListener((iframeEl) => {
       try {
+        debugLog('adding observers for new iframe', iframeEl);
         handlers.push(observe(iframeEl.contentDocument!));
       } catch (error) {
         // TODO: handle internal error

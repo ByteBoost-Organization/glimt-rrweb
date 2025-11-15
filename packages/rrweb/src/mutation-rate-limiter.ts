@@ -132,6 +132,7 @@ class MutationRateLimiter {
     if (!this.inGlobalStorm) return;
     this.debounceTimeout = setTimeout(() => {
       this.debounceTimeout = null;
+      debugLog(`MutationRateLimiter, stopping storm because of debounce`);
       this.stormStopped();
     }, this.debounceTimeoutMs);
   }

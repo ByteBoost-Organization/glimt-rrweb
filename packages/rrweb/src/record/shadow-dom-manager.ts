@@ -13,6 +13,7 @@ import { inDom } from '../utils';
 import type { Mirror } from 'rrweb-snapshot';
 import { isNativeShadowDom } from 'rrweb-snapshot';
 import dom, { patch } from '@rrweb/utils';
+import { debugLog } from './custom-helpers';
 
 type BypassOptions = Omit<
   MutationBufferParam,
@@ -53,6 +54,9 @@ export class ShadowDomManager {
     if (!isNativeShadowDom(shadowRoot)) return;
     if (this.shadowDoms.has(shadowRoot)) return;
     this.shadowDoms.add(shadowRoot);
+
+    debugLog(`Adding mutation observer for shadowRoot ${shadowRoot.host}`);
+
     const observer = initMutationObserver(
       {
         ...this.bypassOptions,
