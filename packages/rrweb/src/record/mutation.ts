@@ -1,41 +1,41 @@
+import type {
+  addedNodeMutation,
+  attributeCursor,
+  mutationRecord,
+  Optional,
+  removedNodeMutation,
+  textCursor,
+} from '@rrweb/types';
+import dom from '@rrweb/utils';
 import {
-  serializeNodeWithId,
-  transformAttribute,
-  IGNORED_NODE,
+  getInputType,
   ignoreAttribute,
+  IGNORED_NODE,
+  isNativeShadowDom,
   isShadowRoot,
-  needMaskingText,
   maskInputValue,
   Mirror,
-  isNativeShadowDom,
-  getInputType,
+  needMaskingText,
+  serializeNodeWithId,
   toLowerCase,
+  transformAttribute,
 } from 'rrweb-snapshot';
-import type { observerParam, MutationBufferParam } from '../types';
-import type {
-  mutationRecord,
-  textCursor,
-  attributeCursor,
-  removedNodeMutation,
-  addedNodeMutation,
-  Optional,
-} from '@rrweb/types';
+import { mutationRateLimiter } from '../mutation-rate-limiter';
+import type { MutationBufferParam, observerParam } from '../types';
 import {
-  isBlocked,
+  closestElementOfNode,
+  getShadowHost,
+  hasShadowRoot,
+  inDom,
   isAncestorRemoved,
+  isBlocked,
   isIgnored,
   isSerialized,
-  hasShadowRoot,
   isSerializedIframe,
   isSerializedStylesheet,
-  inDom,
-  getShadowHost,
-  closestElementOfNode,
 } from '../utils';
-import dom from '@rrweb/utils';
+import { debugLog } from './custom-helpers';
 import stormSnapshotManager from './storm-snapshot-manager';
-import { debugLog, isDebug } from './custom-helpers';
-import { mutationRateLimiter } from '../mutation-rate-limiter';
 
 type DoubleLinkedListNode = {
   previous: DoubleLinkedListNode | null;

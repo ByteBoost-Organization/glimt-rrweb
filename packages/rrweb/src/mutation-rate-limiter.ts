@@ -62,6 +62,7 @@ class MutationRateLimiter {
   }
 
   private stormStopped(stoppedByBuffer?: string) {
+    if (this.debounceTimeout) clearTimeout(this.debounceTimeout);
     this.inGlobalStorm = false;
     this.reset();
 
