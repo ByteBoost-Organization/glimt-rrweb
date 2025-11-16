@@ -14,6 +14,16 @@ class ObserveManager {
   private docsObservers = new WeakSet<Document>();
   private shadowRootsObservers = new WeakSet<ShadowRoot>();
 
+  private docsDebounceTimers = new WeakMap<
+    Document,
+    ReturnType<typeof setTimeout>
+  >();
+  private shadowRootsDebounceTimers = new WeakMap<
+    ShadowRoot,
+    ReturnType<typeof setTimeout>
+  >();
+  private debounceTime = 15;
+
   private mutationOptions: Omit<MutationBufferParam, 'doc'> | null;
 
   private emitter:
@@ -116,13 +126,49 @@ class ObserveManager {
   }
 
   private serializeAndEmitDoc(doc: Document) {
+    debugLog(
+      'onDocObserver: doc already observed, emitting full snapshot for doc',
+      doc,
+    );
+    this.isSnapshottingDocs = true;
     const serialized = this.serializeDoc(doc);
     this.emitDoc(serialized);
+    this.isSnapshottingDocs = false;
   }
 
   private serializeAndEmitShadowRoot(shadowRoot: ShadowRoot) {
+    debugLog(
+      'onShadowRootObserver: shadowRoot already observed, emitting full snapshot for shadowRoot',
+      shadowRoot,
+    );
+    this.isSnapshottingShadowRoots = true;
     const serialized = this.serializeDoc(shadowRoot.ownerDocument);
     this.emitShadowRoot(serialized, shadowRoot);
+    this.isSnapshottingShadowRoots = false;
+  }
+
+  private debounceEmitDoc(doc: Document) {
+    const existingTimer = this.docsDebounceTimers.get(doc);
+    if (existingTimer) clearTimeout(existingTimer);
+    this.docsDebounceTimers.set(
+      doc,
+      setTimeout(() => {
+        this.docsDebounceTimers.delete(doc);
+        this.serializeAndEmitDoc(doc);
+      }, this.debounceTime),
+    );
+  }
+
+  private debounceEmitShadowRoot(shadowRoot: ShadowRoot) {
+    const existingTimer = this.shadowRootsDebounceTimers.get(shadowRoot);
+    if (existingTimer) clearTimeout(existingTimer);
+    this.shadowRootsDebounceTimers.set(
+      shadowRoot,
+      setTimeout(() => {
+        this.shadowRootsDebounceTimers.delete(shadowRoot);
+        this.serializeAndEmitShadowRoot(shadowRoot);
+      }, this.debounceTime),
+    );
   }
 
   onDocObserver(doc: Document) {
@@ -134,13 +180,11 @@ class ObserveManager {
     }
 
     debugLog(
-      'onDocObserver: doc already observed, emitting full snapshot for doc',
+      'onDocObserver: doc already observed, debouncing full snapshot for doc',
       doc,
     );
 
-    this.isSnapshottingDocs = true;
-    this.serializeAndEmitDoc(doc);
-    this.isSnapshottingDocs = false;
+    this.debounceEmitDoc(doc);
 
     return false;
   }
@@ -154,13 +198,11 @@ class ObserveManager {
     }
 
     debugLog(
-      'onShadowRootObserver: shadowRoot already observed, emitting full snapshot for shadowRoot',
+      'onShadowRootObserver: shadowRoot already observed, debouncing full snapshot for shadowRoot',
       shadowRoot,
     );
 
-    this.isSnapshottingShadowRoots = true;
-    this.serializeAndEmitShadowRoot(shadowRoot);
-    this.isSnapshottingShadowRoots = false;
+    this.debounceEmitShadowRoot(shadowRoot);
 
     return false;
   }
