@@ -52,8 +52,8 @@ class ObserveManager {
   // }
 
   destroy() {
-    // this.docsObserved = new WeakSet();
-    // this.shadowRootsObserved = new WeakSet();
+    this.docsObservers = new WeakMap();
+    this.shadowRootsObserved = new WeakMap();
   }
 }
 
