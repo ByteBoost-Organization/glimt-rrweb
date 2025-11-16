@@ -31,19 +31,19 @@ import {
   on,
   polyfill,
 } from '../utils';
+import { isDebug, makeid } from './custom-helpers';
 import {
   callbackWrapper,
   registerErrorHandler,
   unregisterErrorHandler,
 } from './error-handler';
 import { IframeManager } from './iframe-manager';
+import { observeManager } from './observe-manager';
 import { initObservers, mutationBuffers } from './observer';
 import { CanvasManager } from './observers/canvas/canvas-manager';
 import ProcessedNodeManager from './processed-node-manager';
 import { ShadowDomManager } from './shadow-dom-manager';
 import { StylesheetManager } from './stylesheet-manager';
-import { debugLog, isDebug, makeid } from './custom-helpers';
-import { observeManager } from './observe-manager';
 
 let wrappedEmit!: (e: eventWithoutTime, isCheckout?: boolean) => void;
 
