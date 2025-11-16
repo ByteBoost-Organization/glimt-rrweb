@@ -14,6 +14,14 @@ class ObserveManager {
     ObserveManager.instance = this;
   }
 
+  canObserveDoc(doc: Document) {
+    return !this.docsObservers.has(doc);
+  }
+
+  canObserveShadowRoot(shadowRoot: ShadowRoot) {
+    return !this.shadowRootsObserved.has(shadowRoot);
+  }
+
   observerAttached(doc: Document, onCleanup: VoidFunction) {
     debugLog('[doc] attaching observer to doc', doc);
     if (this.docsObservers.has(doc)) {
@@ -36,20 +44,6 @@ class ObserveManager {
 
     this.shadowRootsObserved.set(shadowRoot, onCleanup);
   }
-
-  // attachObserverToDoc(doc: Document, observerMethod: (doc: Document)) {}
-
-  // canObserveDoc(doc: Document) {
-  //   if (this.docsObservers.has(doc)) return false;
-  //   this.docsObservers.set(doc);
-  //   return true;
-  // }
-
-  // canObserveShadow(shadowRoot: ShadowRoot) {
-  //   if (this.shadowRootsObserved.has(shadowRoot)) return false;
-  //   this.shadowRootsObserved.add(shadowRoot);
-  //   return true;
-  // }
 
   destroy() {
     this.docsObservers = new WeakMap();

@@ -582,14 +582,7 @@ function record<T = eventWithTime>(
 
     iframeManager.addLoadListener((iframeEl) => {
       try {
-        // if (!observeManager.canObserveDoc(iframeEl.contentDocument!)) return;
-        // debugLog('adding observers for new iframe', iframeEl);
-        // handlers.push(observe(iframeEl.contentDocument!));
-
-        // observeManager.attachObserverToDoc(iframeEl.contentDocument!, (doc: Document) => {
-        //   const cb = observe(doc);
-        //   handlers.push(cb);
-        // })
+        if (!observeManager.canObserveDoc(iframeEl.contentDocument!)) return;
 
         const stopObserve = observe(iframeEl.contentDocument!);
         const id = makeid();

@@ -54,6 +54,7 @@ export class ShadowDomManager {
 
   public addShadowRoot(shadowRoot: ShadowRoot, doc: Document) {
     if (!isNativeShadowDom(shadowRoot)) return;
+    if (!observeManager.canObserveShadowRoot(shadowRoot)) return;
     if (this.shadowDoms.has(shadowRoot)) return;
     this.shadowDoms.add(shadowRoot);
 
