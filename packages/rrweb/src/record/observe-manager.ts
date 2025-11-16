@@ -5,7 +5,7 @@ import {
   type serializedNodeWithId,
 } from '@rrweb/types';
 import { debugLog } from './custom-helpers';
-import { serializeNodeWithId, type MaskTextFn } from 'rrweb-snapshot';
+import { serializeNodeWithId } from 'rrweb-snapshot';
 import type { MutationBufferParam } from '../types';
 
 class ObserveManager {
