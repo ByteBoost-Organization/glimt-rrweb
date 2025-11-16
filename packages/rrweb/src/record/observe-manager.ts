@@ -124,8 +124,10 @@ class ObserveManager {
 
   onDocObserver(doc: Document) {
     if (!this.usable) return false;
-    if (!this.docsObservers.has(doc)) return true;
-    this.docsObservers.add(doc);
+    if (!this.docsObservers.has(doc)) {
+      this.docsObservers.add(doc);
+      return true;
+    }
 
     debugLog(
       'onDocObserver: doc already observed, emitting full snapshot for doc',
@@ -139,8 +141,10 @@ class ObserveManager {
 
   onShadowRootObserver(shadowRoot: ShadowRoot) {
     if (!this.usable) return false;
-    if (!this.shadowRootsObservers.has(shadowRoot)) return true;
-    this.shadowRootsObservers.add(shadowRoot);
+    if (!this.shadowRootsObservers.has(shadowRoot)) {
+      this.shadowRootsObservers.add(shadowRoot);
+      return true;
+    }
 
     debugLog(
       'onShadowRootObserver: shadowRoot already observed, emitting full snapshot for shadowRoot',

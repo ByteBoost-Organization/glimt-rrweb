@@ -31,7 +31,7 @@ import {
   on,
   polyfill,
 } from '../utils';
-import { isDebug } from './custom-helpers';
+import { debugLog, isDebug } from './custom-helpers';
 import {
   callbackWrapper,
   registerErrorHandler,
@@ -607,6 +607,8 @@ function record<T = eventWithTime>(
     iframeManager.addLoadListener((iframeEl) => {
       try {
         if (!observeManager.onDocObserver(iframeEl.contentDocument!)) return;
+        debugLog('Adding mutation observer for iframe', iframeEl);
+
         handlers.push(observe(iframeEl.contentDocument!));
 
         // if (!observeManager.canObserveDoc(iframeEl.contentDocument!)) return;
