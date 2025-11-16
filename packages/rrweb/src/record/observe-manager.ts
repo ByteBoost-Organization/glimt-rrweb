@@ -20,6 +20,9 @@ class ObserveManager {
     | ((e: eventWithoutTime, isCheckout?: boolean) => void)
     | null = null;
 
+  private isSnapshottingShadowRoots = false;
+  private isSnapshottingDocs = false;
+
   constructor() {
     if (ObserveManager.instance) {
       return ObserveManager.instance;
@@ -123,6 +126,7 @@ class ObserveManager {
   }
 
   onDocObserver(doc: Document) {
+    if (this.isSnapshottingDocs) return false;
     if (!this.usable) return false;
     if (!this.docsObservers.has(doc)) {
       this.docsObservers.add(doc);
@@ -134,12 +138,15 @@ class ObserveManager {
       doc,
     );
 
+    this.isSnapshottingDocs = true;
     this.serializeAndEmitDoc(doc);
+    this.isSnapshottingDocs = false;
 
     return false;
   }
 
   onShadowRootObserver(shadowRoot: ShadowRoot) {
+    if (this.isSnapshottingShadowRoots) return false;
     if (!this.usable) return false;
     if (!this.shadowRootsObservers.has(shadowRoot)) {
       this.shadowRootsObservers.add(shadowRoot);
@@ -151,7 +158,9 @@ class ObserveManager {
       shadowRoot,
     );
 
+    this.isSnapshottingShadowRoots = true;
     this.serializeAndEmitShadowRoot(shadowRoot);
+    this.isSnapshottingShadowRoots = false;
 
     return false;
   }
