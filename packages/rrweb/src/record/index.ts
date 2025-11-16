@@ -31,7 +31,7 @@ import {
   on,
   polyfill,
 } from '../utils';
-import { isDebug, makeid } from './custom-helpers';
+import { isDebug } from './custom-helpers';
 import {
   callbackWrapper,
   registerErrorHandler,
@@ -357,6 +357,30 @@ function record<T = eventWithTime>(
     mirror,
   });
 
+  observeManager.setEmitter(wrappedEmit);
+  observeManager.setMutationOptions({
+    blockClass,
+    blockSelector,
+    maskTextClass,
+    maskTextSelector,
+    inlineStylesheet,
+    maskInputOptions,
+    maskTextFn,
+    maskInputFn,
+    slimDOMOptions,
+    dataURLOptions,
+    canvasManager,
+    stylesheetManager,
+    shadowDomManager,
+    recordCanvas,
+    inlineImages,
+    mirror,
+    iframeManager,
+    keepIframeSrcFn,
+    mutationCb: wrappedMutationEmit,
+    processedNodeManager,
+  });
+
   takeFullSnapshot = (isCheckout = false) => {
     if (!recordDOM) {
       return;
@@ -582,17 +606,20 @@ function record<T = eventWithTime>(
 
     iframeManager.addLoadListener((iframeEl) => {
       try {
-        if (!observeManager.canObserveDoc(iframeEl.contentDocument!)) return;
+        if (!observeManager.onDocObserver(iframeEl.contentDocument!)) return;
+        handlers.push(observe(iframeEl.contentDocument!));
 
-        const stopObserve = observe(iframeEl.contentDocument!);
-        const id = makeid();
+        // if (!observeManager.canObserveDoc(iframeEl.contentDocument!)) return;
 
-        registeredHandlers[id] = stopObserve;
+        // const stopObserve = observe(iframeEl.contentDocument!);
+        // const id = makeid();
 
-        observeManager.observerAttached(iframeEl.contentDocument!, () => {
-          stopObserve();
-          delete registeredHandlers[id];
-        });
+        // registeredHandlers[id] = stopObserve;
+
+        // observeManager.observerAttached(iframeEl.contentDocument!, () => {
+        //   stopObserve();
+        //   delete registeredHandlers[id];
+        // });
       } catch (error) {
         // TODO: handle internal error
         if (isDebug()) {

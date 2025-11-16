@@ -1,20 +1,20 @@
-import type { MutationBufferParam } from '../types';
 import type {
   mutationCallBack,
-  scrollCallback,
   SamplingStrategy,
+  scrollCallback,
 } from '@rrweb/types';
-import {
-  initMutationObserver,
-  initScrollObserver,
-  initAdoptedStyleSheetObserver,
-} from './observer';
-import { inDom } from '../utils';
+import dom, { patch } from '@rrweb/utils';
 import type { Mirror } from 'rrweb-snapshot';
 import { isNativeShadowDom } from 'rrweb-snapshot';
-import dom, { patch } from '@rrweb/utils';
-import { debugLog, makeid } from './custom-helpers';
+import type { MutationBufferParam } from '../types';
+import { inDom } from '../utils';
+import { debugLog } from './custom-helpers';
 import { observeManager } from './observe-manager';
+import {
+  initAdoptedStyleSheetObserver,
+  initMutationObserver,
+  initScrollObserver,
+} from './observer';
 
 type BypassOptions = Omit<
   MutationBufferParam,
@@ -54,13 +54,11 @@ export class ShadowDomManager {
 
   public addShadowRoot(shadowRoot: ShadowRoot, doc: Document) {
     if (!isNativeShadowDom(shadowRoot)) return;
-    if (!observeManager.canObserveShadowRoot(shadowRoot)) return;
+    if (!observeManager.onShadowRootObserver(shadowRoot)) return;
     if (this.shadowDoms.has(shadowRoot)) return;
     this.shadowDoms.add(shadowRoot);
 
     debugLog(`Adding mutation observer for shadowRoot ${shadowRoot.host}`);
-
-    const observeId = makeid();
 
     const observer = initMutationObserver(
       {
@@ -73,8 +71,8 @@ export class ShadowDomManager {
       shadowRoot,
     );
 
-    this.mappedRestoreHandlers[observeId] = [
-      () => observer.disconnect(),
+    this.restoreHandlers.push(() => observer.disconnect());
+    this.restoreHandlers.push(
       initScrollObserver({
         ...this.bypassOptions,
         scrollCb: this.scrollCb,
@@ -83,7 +81,7 @@ export class ShadowDomManager {
         doc: shadowRoot as unknown as Document,
         mirror: this.mirror,
       }),
-    ];
+    );
 
     // Defer this to avoid adoptedStyleSheet events being created before the full snapshot is created or attachShadow action is recorded.
     setTimeout(() => {
@@ -96,7 +94,7 @@ export class ShadowDomManager {
           this.mirror.getId(dom.host(shadowRoot)),
         );
 
-      this.mappedRestoreHandlers[observeId].push(
+      this.restoreHandlers.push(
         initAdoptedStyleSheetObserver(
           {
             mirror: this.mirror,
@@ -106,22 +104,6 @@ export class ShadowDomManager {
         ),
       );
     }, 0);
-
-    observeManager.observerAttachedToShadow(shadowRoot, () => {
-      const handlers = this.mappedRestoreHandlers[observeId];
-
-      if (handlers) {
-        for (const handler of handlers) {
-          try {
-            handler();
-          } catch (e) {
-            //
-          }
-        }
-      }
-
-      delete this.mappedRestoreHandlers[observeId];
-    });
   }
 
   /**
