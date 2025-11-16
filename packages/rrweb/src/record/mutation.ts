@@ -34,7 +34,7 @@ import {
   isSerializedIframe,
   isSerializedStylesheet,
 } from '../utils';
-import { debugLog } from './custom-helpers';
+import { debugLog, makeid } from './custom-helpers';
 import stormSnapshotManager from './storm-snapshot-manager';
 
 type DoubleLinkedListNode = {
@@ -140,17 +140,6 @@ const moveKey = (id: number, parentId: number) => `${id}@${parentId}`;
 interface StormBatch {
   ts: number;
   mutations: mutationRecord[];
-}
-
-const characters =
-  'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-
-function makeid(length = 8) {
-  let result = '';
-  for (let i = 0; i < length; i++) {
-    result += characters.charAt(Math.floor(Math.random() * characters.length));
-  }
-  return result;
 }
 
 /**

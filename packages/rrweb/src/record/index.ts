@@ -42,7 +42,7 @@ import { CanvasManager } from './observers/canvas/canvas-manager';
 import ProcessedNodeManager from './processed-node-manager';
 import { ShadowDomManager } from './shadow-dom-manager';
 import { StylesheetManager } from './stylesheet-manager';
-import { debugLog, isDebug } from './custom-helpers';
+import { debugLog, isDebug, makeid } from './custom-helpers';
 import { observeManager } from './observe-manager';
 
 let wrappedEmit!: (e: eventWithoutTime, isCheckout?: boolean) => void;
@@ -443,6 +443,7 @@ function record<T = eventWithTime>(
 
   try {
     const handlers: listenerHandler[] = [];
+    const registeredHandlers: Record<string, listenerHandler> = {};
 
     const observe = (doc: Document) => {
       return callbackWrapper(initObservers)(
@@ -581,9 +582,24 @@ function record<T = eventWithTime>(
 
     iframeManager.addLoadListener((iframeEl) => {
       try {
-        if (!observeManager.canObserveDoc(iframeEl.contentDocument!)) return;
-        debugLog('adding observers for new iframe', iframeEl);
-        handlers.push(observe(iframeEl.contentDocument!));
+        // if (!observeManager.canObserveDoc(iframeEl.contentDocument!)) return;
+        // debugLog('adding observers for new iframe', iframeEl);
+        // handlers.push(observe(iframeEl.contentDocument!));
+
+        // observeManager.attachObserverToDoc(iframeEl.contentDocument!, (doc: Document) => {
+        //   const cb = observe(doc);
+        //   handlers.push(cb);
+        // })
+
+        const stopObserve = observe(iframeEl.contentDocument!);
+        const id = makeid();
+
+        registeredHandlers[id] = stopObserve;
+
+        observeManager.observerAttached(iframeEl.contentDocument!, () => {
+          stopObserve();
+          delete registeredHandlers[id];
+        });
       } catch (error) {
         // TODO: handle internal error
         if (isDebug()) {
@@ -691,6 +707,7 @@ function record<T = eventWithTime>(
     }
     return () => {
       handlers.forEach((h) => h());
+      Object.values(registeredHandlers).forEach((h) => h());
       processedNodeManager.destroy();
       observeManager.destroy();
       recording = false;

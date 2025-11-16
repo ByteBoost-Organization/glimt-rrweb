@@ -13,7 +13,7 @@ import { inDom } from '../utils';
 import type { Mirror } from 'rrweb-snapshot';
 import { isNativeShadowDom } from 'rrweb-snapshot';
 import dom, { patch } from '@rrweb/utils';
-import { debugLog } from './custom-helpers';
+import { debugLog, makeid } from './custom-helpers';
 import { observeManager } from './observe-manager';
 
 type BypassOptions = Omit<
@@ -30,6 +30,7 @@ export class ShadowDomManager {
   private bypassOptions: BypassOptions;
   private mirror: Mirror;
   private restoreHandlers: (() => void)[] = [];
+  private mappedRestoreHandlers: Record<string, VoidFunction[]> = {};
 
   constructor(options: {
     mutationCb: mutationCallBack;
@@ -54,11 +55,11 @@ export class ShadowDomManager {
   public addShadowRoot(shadowRoot: ShadowRoot, doc: Document) {
     if (!isNativeShadowDom(shadowRoot)) return;
     if (this.shadowDoms.has(shadowRoot)) return;
-    if (!observeManager.canObserveShadow(shadowRoot)) return;
-
     this.shadowDoms.add(shadowRoot);
 
     debugLog(`Adding mutation observer for shadowRoot ${shadowRoot.host}`);
+
+    const observeId = makeid();
 
     const observer = initMutationObserver(
       {
@@ -70,8 +71,9 @@ export class ShadowDomManager {
       },
       shadowRoot,
     );
-    this.restoreHandlers.push(() => observer.disconnect());
-    this.restoreHandlers.push(
+
+    this.mappedRestoreHandlers[observeId] = [
+      () => observer.disconnect(),
       initScrollObserver({
         ...this.bypassOptions,
         scrollCb: this.scrollCb,
@@ -80,7 +82,8 @@ export class ShadowDomManager {
         doc: shadowRoot as unknown as Document,
         mirror: this.mirror,
       }),
-    );
+    ];
+
     // Defer this to avoid adoptedStyleSheet events being created before the full snapshot is created or attachShadow action is recorded.
     setTimeout(() => {
       if (
@@ -91,7 +94,8 @@ export class ShadowDomManager {
           shadowRoot.adoptedStyleSheets,
           this.mirror.getId(dom.host(shadowRoot)),
         );
-      this.restoreHandlers.push(
+
+      this.mappedRestoreHandlers[observeId].push(
         initAdoptedStyleSheetObserver(
           {
             mirror: this.mirror,
@@ -101,6 +105,22 @@ export class ShadowDomManager {
         ),
       );
     }, 0);
+
+    observeManager.observerAttachedToShadow(shadowRoot, () => {
+      const handlers = this.mappedRestoreHandlers[observeId];
+
+      if (handlers) {
+        for (const handler of handlers) {
+          try {
+            handler();
+          } catch (e) {
+            //
+          }
+        }
+      }
+
+      delete this.mappedRestoreHandlers[observeId];
+    });
   }
 
   /**
@@ -158,6 +178,18 @@ export class ShadowDomManager {
         //
       }
     });
+
+    Object.values(this.mappedRestoreHandlers).forEach((handlers) => {
+      for (const handler of handlers) {
+        try {
+          handler();
+        } catch (e) {
+          //
+        }
+      }
+    });
+
+    this.mappedRestoreHandlers = {};
     this.restoreHandlers = [];
     this.shadowDoms = new WeakSet();
   }
