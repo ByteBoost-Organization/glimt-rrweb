@@ -12,7 +12,7 @@ class ObserveManager {
   static instance: ObserveManager;
 
   private docsObservers = new WeakSet<Document>();
-  private shadowRootsObservers = new WeakMap<ShadowRoot, VoidFunction>();
+  private shadowRootsObservers = new WeakSet<ShadowRoot>();
 
   private mutationOptions: Omit<MutationBufferParam, 'doc'> | null;
 
@@ -125,6 +125,7 @@ class ObserveManager {
   onDocObserver(doc: Document) {
     if (!this.usable) return false;
     if (!this.docsObservers.has(doc)) return true;
+    this.docsObservers.add(doc);
 
     debugLog(
       'onDocObserver: doc already observed, emitting full snapshot for doc',
@@ -139,6 +140,7 @@ class ObserveManager {
   onShadowRootObserver(shadowRoot: ShadowRoot) {
     if (!this.usable) return false;
     if (!this.shadowRootsObservers.has(shadowRoot)) return true;
+    this.shadowRootsObservers.add(shadowRoot);
 
     debugLog(
       'onShadowRootObserver: shadowRoot already observed, emitting full snapshot for shadowRoot',
@@ -193,7 +195,7 @@ class ObserveManager {
 
   destroy() {
     this.docsObservers = new WeakSet();
-    this.shadowRootsObservers = new WeakMap();
+    this.shadowRootsObservers = new WeakSet();
   }
 }
 
