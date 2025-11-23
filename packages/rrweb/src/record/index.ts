@@ -357,29 +357,6 @@ function record<T = eventWithTime>(
     mirror,
   });
 
-  observeManager.setMutationOptions({
-    blockClass,
-    blockSelector,
-    maskTextClass,
-    maskTextSelector,
-    inlineStylesheet,
-    maskInputOptions,
-    maskTextFn,
-    maskInputFn,
-    slimDOMOptions,
-    dataURLOptions,
-    canvasManager,
-    stylesheetManager,
-    shadowDomManager,
-    recordCanvas,
-    inlineImages,
-    mirror,
-    iframeManager,
-    keepIframeSrcFn,
-    mutationCb: wrappedMutationEmit,
-    processedNodeManager,
-  });
-
   takeFullSnapshot = (isCheckout = false) => {
     if (!recordDOM) {
       return;

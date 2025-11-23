@@ -1,5 +1,3 @@
-import { serializeNodeWithId } from 'rrweb-snapshot';
-import type { MutationBufferParam } from '../types';
 import { debugLog, makeid } from './custom-helpers';
 
 class ObserveManager {
@@ -10,36 +8,12 @@ class ObserveManager {
 
   private docObservers = new WeakMap<Document, VoidFunction>();
 
-  private mutationOptions: Omit<MutationBufferParam, 'doc'> | null;
-
   constructor() {
     if (ObserveManager.instance) {
       return ObserveManager.instance;
     }
 
     ObserveManager.instance = this;
-  }
-  public setMutationOptions(options: Omit<MutationBufferParam, 'doc'>) {
-    this.mutationOptions = options;
-  }
-
-  public serializeDoc(doc: Document) {
-    if (!this.mutationOptions?.mirror) return null;
-
-    const serialized = serializeNodeWithId(doc, {
-      ...this.mutationOptions,
-      doc,
-      skipChild: false,
-      maskTextFn: this.mutationOptions?.maskTextFn,
-      maskInputFn: this.mutationOptions?.maskInputFn,
-    });
-
-    if (!serialized) {
-      debugLog('snapshotDoc: no serialized node');
-      return null;
-    }
-
-    return serialized;
   }
 
   public observeIframe(
