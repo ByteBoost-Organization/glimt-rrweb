@@ -9,12 +9,12 @@ import { isNativeShadowDom } from 'rrweb-snapshot';
 import type { MutationBufferParam } from '../types';
 import { inDom } from '../utils';
 import { debugLog } from './custom-helpers';
-import { observeManager } from './observe-manager';
 import {
   initAdoptedStyleSheetObserver,
   initMutationObserver,
   initScrollObserver,
 } from './observer';
+import { observeManager } from './observe-manager';
 
 type BypassOptions = Omit<
   MutationBufferParam,
@@ -30,7 +30,6 @@ export class ShadowDomManager {
   private bypassOptions: BypassOptions;
   private mirror: Mirror;
   private restoreHandlers: (() => void)[] = [];
-  private mappedRestoreHandlers: Record<string, VoidFunction[]> = {};
 
   constructor(options: {
     mutationCb: mutationCallBack;
@@ -54,11 +53,16 @@ export class ShadowDomManager {
 
   public addShadowRoot(shadowRoot: ShadowRoot, doc: Document) {
     if (!isNativeShadowDom(shadowRoot)) return;
-    if (!observeManager.onShadowRootObserver(shadowRoot)) return;
+    if (!observeManager.canRegisterShadowRootObserver(shadowRoot)) return;
     if (this.shadowDoms.has(shadowRoot)) return;
     this.shadowDoms.add(shadowRoot);
 
-    debugLog(`Adding mutation observer for shadowRoot ${shadowRoot.host}`);
+    debugLog(
+      `Adding mutation observer for shadowRoot`,
+      shadowRoot.host,
+      'restoreHandlers',
+      this.restoreHandlers.length,
+    );
 
     const observer = initMutationObserver(
       {
@@ -162,17 +166,6 @@ export class ShadowDomManager {
       }
     });
 
-    Object.values(this.mappedRestoreHandlers).forEach((handlers) => {
-      for (const handler of handlers) {
-        try {
-          handler();
-        } catch (e) {
-          //
-        }
-      }
-    });
-
-    this.mappedRestoreHandlers = {};
     this.restoreHandlers = [];
     this.shadowDoms = new WeakSet();
   }

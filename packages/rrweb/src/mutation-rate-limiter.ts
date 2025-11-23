@@ -18,7 +18,7 @@ class MutationRateLimiter {
 
   private interval = 50;
   private exitInterval = 100;
-  private mutThreshold = 100;
+  private mutThreshold = 250;
 
   private inGlobalStorm = false;
 
