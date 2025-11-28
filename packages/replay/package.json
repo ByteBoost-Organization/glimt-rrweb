@@ -57,7 +57,7 @@
   },
   "dependencies": {
     "@rrweb/types": "^2.0.0-alpha.18",
-    "rrweb": "^2.0.0-alpha.18"
+    "@glimt/rrweb": "^0.0.8"
   },
   "browserslist": [
     "supports es6-class"

@@ -3,7 +3,7 @@ import {
   type playerConfig,
   type PlayerMachineState,
   type SpeedMachineState,
-} from 'rrweb';
+} from '@glimt/rrweb';
 import 'rrweb/dist/style.css';
 
 export {

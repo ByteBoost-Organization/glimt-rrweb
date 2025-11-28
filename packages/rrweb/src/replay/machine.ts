@@ -44,6 +44,12 @@ export type PlayerEvent =
     }
   | {
       type: 'END';
+    }
+  | {
+      type: 'REMOVE_EVENTS';
+      payload: {
+        indexSpan: [number, number];
+      };
     };
 export type PlayerState =
   | {
@@ -111,6 +117,10 @@ export function createPlayerService(
               target: 'playing',
               actions: ['addEvent'],
             },
+            REMOVE_EVENTS: {
+              target: 'playing',
+              actions: ['removeEvent'],
+            },
           },
         },
         paused: {
@@ -131,6 +141,10 @@ export function createPlayerService(
               target: 'paused',
               actions: ['addEvent'],
             },
+            REMOVE_EVENTS: {
+              target: 'paused',
+              actions: ['removeEvent'],
+            },
           },
         },
         live: {
@@ -138,6 +152,10 @@ export function createPlayerService(
             ADD_EVENT: {
               target: 'live',
               actions: ['addEvent'],
+            },
+            REMOVE_EVENTS: {
+              target: 'live',
+              actions: ['removeEvent'],
             },
             CAST_EVENT: {
               target: 'live',
@@ -234,6 +252,16 @@ export function createPlayerService(
             }
             return Date.now();
           },
+        }),
+        removeEvent: assign((ctx, machineEvent) => {
+          const { events } = ctx;
+          if (machineEvent.type === 'REMOVE_EVENTS') {
+            const { indexSpan } = machineEvent.payload;
+            for (let i = indexSpan[0]; i <= indexSpan[1]; i++) {
+              events.splice(i, 1);
+            }
+          }
+          return { ...ctx, events };
         }),
         addEvent: assign((ctx, machineEvent) => {
           const { baselineTime, timer, events } = ctx;
