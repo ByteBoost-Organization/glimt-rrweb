@@ -209,17 +209,6 @@ export const serializeCanvas = ({
     });
   }
 
-  //   blankCanvas.height = (n as HTMLCanvasElement).height;
-  //   const blankCanvasDataURL = blankCanvas.toDataURL(
-  //     dataURLOptions.type,
-  //     dataURLOptions.quality,
-  //   );
-
-  //   // no need to save dataURL if it's the same as blank canvas
-  //   if (canvasDataURL !== blankCanvasDataURL) {
-  //     attributes.rr_dataURL = canvasDataURL;
-  //   }
-  // }
 
   return attributes;
 };
