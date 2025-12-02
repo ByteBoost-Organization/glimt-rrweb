@@ -209,25 +209,6 @@ export const serializeCanvas = ({
     });
   }
 
-  //org:
-  // if ((n as ICanvas).__context === '2d') {
-  //   // only record this on 2d canvas
-  //   if (!is2DCanvasBlank(n as HTMLCanvasElement)) {
-  //     attributes.rr_dataURL = (n as HTMLCanvasElement).toDataURL(
-  //       dataURLOptions.type,
-  //       dataURLOptions.quality,
-  //     );
-  //   }
-  // } else if (!('__context' in n)) {
-  //   // context is unknown, better not call getContext to trigger it
-  //   const canvasDataURL = (n as HTMLCanvasElement).toDataURL(
-  //     dataURLOptions.type,
-  //     dataURLOptions.quality,
-  //   );
-
-  //   // create blank canvas of same dimensions
-  //   const blankCanvas = doc.createElement('canvas');
-  //   blankCanvas.width = (n as HTMLCanvasElement).width;
   //   blankCanvas.height = (n as HTMLCanvasElement).height;
   //   const blankCanvasDataURL = blankCanvas.toDataURL(
   //     dataURLOptions.type,
