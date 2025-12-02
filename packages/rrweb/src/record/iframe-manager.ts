@@ -1,14 +1,14 @@
+import type {
+  eventWithTime,
+  eventWithoutTime,
+  mutationCallBack,
+  serializedNodeWithId,
+} from '@rrweb/types';
+import { EventType, IncrementalSource, NodeType } from '@rrweb/types';
 import type { Mirror } from 'rrweb-snapshot';
 import { genId } from 'rrweb-snapshot';
 import type { CrossOriginIframeMessageEvent } from '../types';
 import CrossOriginIframeMirror from './cross-origin-iframe-mirror';
-import { EventType, NodeType, IncrementalSource } from '@rrweb/types';
-import type {
-  eventWithTime,
-  eventWithoutTime,
-  serializedNodeWithId,
-  mutationCallBack,
-} from '@rrweb/types';
 import type { StylesheetManager } from './stylesheet-manager';
 
 export class IframeManager {
@@ -46,6 +46,12 @@ export class IframeManager {
     if (this.recordCrossOriginIframes) {
       window.addEventListener('message', this.handleMessage.bind(this));
     }
+  }
+
+  destroy() {
+    this.iframes = new WeakMap();
+    this.crossOriginIframeMap = new WeakMap();
+    this.crossOriginIframeRootIdMap = new WeakMap();
   }
 
   public addIframe(iframeEl: HTMLIFrameElement) {

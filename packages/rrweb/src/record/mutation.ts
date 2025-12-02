@@ -1,40 +1,41 @@
+import type {
+  addedNodeMutation,
+  attributeCursor,
+  mutationRecord,
+  Optional,
+  removedNodeMutation,
+  textCursor,
+} from '@rrweb/types';
+import dom from '@rrweb/utils';
 import {
-  serializeNodeWithId,
-  transformAttribute,
-  IGNORED_NODE,
+  getInputType,
   ignoreAttribute,
+  IGNORED_NODE,
+  isNativeShadowDom,
   isShadowRoot,
-  needMaskingText,
   maskInputValue,
   Mirror,
-  isNativeShadowDom,
-  getInputType,
+  needMaskingText,
+  serializeNodeWithId,
   toLowerCase,
+  transformAttribute,
 } from 'rrweb-snapshot';
-import type { observerParam, MutationBufferParam } from '../types';
-import type {
-  mutationRecord,
-  textCursor,
-  attributeCursor,
-  removedNodeMutation,
-  addedNodeMutation,
-  Optional,
-} from '@rrweb/types';
+import { mutationRateLimiter } from '../mutation-rate-limiter';
+import type { MutationBufferParam, observerParam } from '../types';
 import {
-  isBlocked,
+  closestElementOfNode,
+  getShadowHost,
+  hasShadowRoot,
+  inDom,
   isAncestorRemoved,
+  isBlocked,
   isIgnored,
   isSerialized,
-  hasShadowRoot,
   isSerializedIframe,
   isSerializedStylesheet,
-  inDom,
-  getShadowHost,
-  closestElementOfNode,
 } from '../utils';
-import dom from '@rrweb/utils';
+import { debugLog, makeid } from './custom-helpers';
 import stormSnapshotManager from './storm-snapshot-manager';
-import { debugLog, isDebug } from './custom-helpers';
 
 type DoubleLinkedListNode = {
   previous: DoubleLinkedListNode | null;
@@ -141,17 +142,6 @@ interface StormBatch {
   mutations: mutationRecord[];
 }
 
-const characters =
-  'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-
-function makeid(length = 8) {
-  let result = '';
-  for (let i = 0; i < length; i++) {
-    result += characters.charAt(Math.floor(Math.random() * characters.length));
-  }
-  return result;
-}
-
 /**
  * controls behaviour of a MutationObserver
  */
@@ -212,7 +202,7 @@ export default class MutationBuffer {
   private processedNodeManager: observerParam['processedNodeManager'];
   private unattachedDoc: HTMLDocument;
 
-  private bufId: string = isDebug() ? makeid() : '';
+  public bufId = makeid();
 
   public init(options: MutationBufferParam) {
     (
@@ -285,12 +275,24 @@ export default class MutationBuffer {
   } = null;
 
   private stormSettings = {
-    batchSize: 150, //was 300
-    timeout: 30, //was 50
+    batchSize: 50, //was 300
+    timeout: 50, //was 50
     mutationLimit: 800, //was 1500
   };
 
-  private handleStormMutations = (muts: mutationRecord[]) => {
+  private debounceStormFinish = () => {
+    if (!this.stormInfo) return;
+    if (mutationRateLimiter.isInGlobalStorm()) return;
+    this.stormInfo.timeout = setTimeout(
+      this.handleStormFinish,
+      this.stormSettings.timeout,
+    );
+  };
+
+  private handleStormMutations = (
+    muts: mutationRecord[],
+    canFinishStorm = true,
+  ) => {
     const time = Date.now();
 
     if (this.stormInfo == null) {
@@ -302,9 +304,9 @@ export default class MutationBuffer {
       this.stormInfo = {
         startedAt: time,
         totalMutations: 0,
-        timeout: setTimeout(this.handleStormFinish, this.stormSettings.timeout),
         stormExceededLimit: false,
       };
+      if (canFinishStorm) this.debounceStormFinish();
     }
 
     this.stormInfo.totalMutations += muts.length;
@@ -321,19 +323,16 @@ export default class MutationBuffer {
 
     clearTimeout(this.stormInfo.timeout);
 
-    if (muts.length < this.stormSettings.batchSize) {
+    if (canFinishStorm && muts.length < this.stormSettings.batchSize) {
       //if we received a small batch, the storm is over
       this.handleStormFinish();
     } else {
       //otherwise, we'll just debounce: expecting more storm
-      this.stormInfo.timeout = setTimeout(
-        this.handleStormFinish,
-        this.stormSettings.timeout,
-      );
+      this.debounceStormFinish();
     }
   };
 
-  private handleStormFinish = () => {
+  public handleStormFinish = () => {
     if (!this.stormInfo) return;
 
     const { stormExceededLimit } = this.stormInfo;
@@ -373,11 +372,20 @@ export default class MutationBuffer {
     muts: mutationRecord[],
     overrideStorm = false,
   ) => {
-    if (
-      !overrideStorm &&
-      (this.stormInfo != null || muts.length >= this.stormSettings.batchSize)
-    ) {
-      this.handleStormMutations(muts);
+    if (!overrideStorm) {
+      const isStorming = mutationRateLimiter.isStorming(muts.length, this);
+
+      if (isStorming) {
+        this.handleStormMutations(muts, false);
+        return;
+      }
+
+      if (
+        this.stormInfo != null ||
+        muts.length >= this.stormSettings.batchSize
+      ) {
+        this.handleStormMutations(muts);
+      }
       return;
     }
 

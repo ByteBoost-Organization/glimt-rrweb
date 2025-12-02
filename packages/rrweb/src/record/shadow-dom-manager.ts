@@ -1,18 +1,20 @@
-import type { MutationBufferParam } from '../types';
 import type {
   mutationCallBack,
-  scrollCallback,
   SamplingStrategy,
+  scrollCallback,
 } from '@rrweb/types';
-import {
-  initMutationObserver,
-  initScrollObserver,
-  initAdoptedStyleSheetObserver,
-} from './observer';
-import { inDom } from '../utils';
+import dom, { patch } from '@rrweb/utils';
 import type { Mirror } from 'rrweb-snapshot';
 import { isNativeShadowDom } from 'rrweb-snapshot';
-import dom, { patch } from '@rrweb/utils';
+import type { MutationBufferParam } from '../types';
+import { inDom } from '../utils';
+import { debugLog } from './custom-helpers';
+import {
+  initAdoptedStyleSheetObserver,
+  initMutationObserver,
+  initScrollObserver,
+} from './observer';
+import { observeManager } from './observe-manager';
 
 type BypassOptions = Omit<
   MutationBufferParam,
@@ -51,8 +53,17 @@ export class ShadowDomManager {
 
   public addShadowRoot(shadowRoot: ShadowRoot, doc: Document) {
     if (!isNativeShadowDom(shadowRoot)) return;
+    if (!observeManager.canRegisterShadowRootObserver(shadowRoot)) return;
     if (this.shadowDoms.has(shadowRoot)) return;
     this.shadowDoms.add(shadowRoot);
+
+    debugLog(
+      `Adding mutation observer for shadowRoot`,
+      shadowRoot.host,
+      'restoreHandlers',
+      this.restoreHandlers.length,
+    );
+
     const observer = initMutationObserver(
       {
         ...this.bypassOptions,
@@ -63,6 +74,7 @@ export class ShadowDomManager {
       },
       shadowRoot,
     );
+
     this.restoreHandlers.push(() => observer.disconnect());
     this.restoreHandlers.push(
       initScrollObserver({
@@ -74,6 +86,7 @@ export class ShadowDomManager {
         mirror: this.mirror,
       }),
     );
+
     // Defer this to avoid adoptedStyleSheet events being created before the full snapshot is created or attachShadow action is recorded.
     setTimeout(() => {
       if (
@@ -84,6 +97,7 @@ export class ShadowDomManager {
           shadowRoot.adoptedStyleSheets,
           this.mirror.getId(dom.host(shadowRoot)),
         );
+
       this.restoreHandlers.push(
         initAdoptedStyleSheetObserver(
           {
@@ -151,6 +165,7 @@ export class ShadowDomManager {
         //
       }
     });
+
     this.restoreHandlers = [];
     this.shadowDoms = new WeakSet();
   }

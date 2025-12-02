@@ -3,7 +3,6 @@ import {
   IncrementalSource,
   type adoptedStyleSheetParam,
   type canvasMutationParam,
-  type eventWithoutTime,
   type eventWithTime,
   type listenerHandler,
   type mutationCallbackParam,
@@ -31,20 +30,22 @@ import {
   on,
   polyfill,
 } from '../utils';
+import { debugLog, isDebug } from './custom-helpers';
+import type { WrappedEmit } from './custom-types';
 import {
   callbackWrapper,
   registerErrorHandler,
   unregisterErrorHandler,
 } from './error-handler';
 import { IframeManager } from './iframe-manager';
+import { observeManager } from './observe-manager';
 import { initObservers, mutationBuffers } from './observer';
 import { CanvasManager } from './observers/canvas/canvas-manager';
 import ProcessedNodeManager from './processed-node-manager';
 import { ShadowDomManager } from './shadow-dom-manager';
 import { StylesheetManager } from './stylesheet-manager';
-import { isDebug } from './custom-helpers';
 
-let wrappedEmit!: (e: eventWithoutTime, isCheckout?: boolean) => void;
+let wrappedEmit!: WrappedEmit;
 
 let takeFullSnapshot!: (isCheckout?: boolean) => void;
 let canvasManager!: CanvasManager;
@@ -204,9 +205,9 @@ function record<T = eventWithTime>(
     }
     return e as unknown as T;
   };
-  wrappedEmit = (r: eventWithoutTime, isCheckout?: boolean) => {
+  wrappedEmit = (r, isCheckout, customOpts) => {
     const e = r as eventWithTime;
-    e.timestamp = nowTimestamp();
+    e.timestamp = customOpts?.overrideTimestamp ?? nowTimestamp();
     if (
       mutationBuffers[0]?.isFrozen() &&
       e.type !== EventType.FullSnapshot &&
@@ -578,9 +579,46 @@ function record<T = eventWithTime>(
       );
     };
 
+    const registeredHandlers: Record<string, listenerHandler> = {};
+
     iframeManager.addLoadListener((iframeEl) => {
       try {
-        handlers.push(observe(iframeEl.contentDocument!));
+        observeManager.observeIframe(
+          iframeEl.contentDocument!,
+          (id) => {
+            const cleanup = observe(iframeEl.contentDocument!);
+            registeredHandlers[id] = cleanup;
+            debugLog(
+              iframeEl.contentDocument,
+              'did register handler on iframe. current registered handlers',
+              Object.keys(registeredHandlers).length,
+            );
+          },
+          (id) => {
+            const handler = registeredHandlers[id];
+            if (handler) handler();
+            delete registeredHandlers[id];
+
+            debugLog(
+              iframeEl.contentDocument,
+              'did cleanup for regisited handler on iframe. current registered handlers',
+              Object.keys(registeredHandlers).length,
+            );
+          },
+        );
+
+        //keeping this for now, rrwebs standard handling for iframes
+        //minues the call to observeManager
+        // if (!observeManager.canRegisterDocObserver(iframeEl.contentDocument!))
+        //   return;
+        // debugLog(
+        //   'Adding mutation observer for iframe',
+        //   iframeEl,
+        //   'handlers',
+        //   handlers.length,
+        // );
+
+        // handlers.push(observe(iframeEl.contentDocument!));
       } catch (error) {
         // TODO: handle internal error
         if (isDebug()) {
@@ -688,7 +726,10 @@ function record<T = eventWithTime>(
     }
     return () => {
       handlers.forEach((h) => h());
+      Object.values(registeredHandlers).forEach((h) => h());
       processedNodeManager.destroy();
+      iframeManager.destroy();
+      observeManager.destroy();
       recording = false;
       unregisterErrorHandler();
     };
