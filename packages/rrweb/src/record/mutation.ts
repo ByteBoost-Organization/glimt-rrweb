@@ -275,7 +275,7 @@ export default class MutationBuffer {
   } = null;
 
   private stormSettings = {
-    batchSize: 50, //was 300
+    batchSize: 250, //was 300
     timeout: 50, //was 50
     mutationLimit: 800, //was 1500
   };
