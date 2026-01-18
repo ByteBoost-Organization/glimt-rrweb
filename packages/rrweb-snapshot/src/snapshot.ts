@@ -714,7 +714,7 @@ function serializeElementNode(
         n.getBoundingClientRect();
 
       attributes = {
-        class: attributes.class,
+        ...attributes,
         c_rr_top: `${top}px`,
         c_rr_left: `${left}px`,
         c_rr_bottom: `${bottom}px`,
