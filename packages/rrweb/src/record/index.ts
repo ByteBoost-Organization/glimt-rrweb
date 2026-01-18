@@ -74,6 +74,7 @@ function record<T = eventWithTime>(
     checkoutEveryNms,
     checkoutEveryNth,
     blockClass = 'rr-block',
+    captureBlockBoundingBoxes = false,
     blockSelector = null,
     ignoreClass = 'rr-ignore',
     ignoreSelector = null,
@@ -353,6 +354,7 @@ function record<T = eventWithTime>(
       canvasManager,
       keepIframeSrcFn,
       processedNodeManager,
+      captureBlockBoundingBoxes,
     },
     mirror,
   });
@@ -383,6 +385,7 @@ function record<T = eventWithTime>(
     const node = snapshot(document, {
       mirror,
       blockClass,
+      captureBlockBoundingBoxes,
       blockSelector,
       maskTextClass,
       maskTextSelector,
@@ -559,6 +562,7 @@ function record<T = eventWithTime>(
           processedNodeManager,
           canvasManager,
           ignoreCSSAttributes,
+          captureBlockBoundingBoxes,
           plugins:
             plugins
               ?.filter((p) => p.observer)

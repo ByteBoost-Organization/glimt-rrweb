@@ -201,6 +201,7 @@ export default class MutationBuffer {
   private canvasManager: observerParam['canvasManager'];
   private processedNodeManager: observerParam['processedNodeManager'];
   private unattachedDoc: HTMLDocument;
+  private captureBlockBoundingBoxes: observerParam['captureBlockBoundingBoxes'];
 
   public bufId = makeid();
 
@@ -228,6 +229,7 @@ export default class MutationBuffer {
         'shadowDomManager',
         'canvasManager',
         'processedNodeManager',
+        'captureBlockBoundingBoxes',
       ] as const
     ).forEach((key) => {
       // just a type trick, the runtime result is correct
@@ -484,6 +486,7 @@ export default class MutationBuffer {
         doc: this.doc,
         mirror: this.mirror,
         blockClass: this.blockClass,
+        captureBlockBoundingBoxes: this.captureBlockBoundingBoxes,
         blockSelector: this.blockSelector,
         maskTextClass: this.maskTextClass,
         maskTextSelector: this.maskTextSelector,
