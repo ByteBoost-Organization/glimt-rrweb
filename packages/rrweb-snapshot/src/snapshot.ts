@@ -697,11 +697,18 @@ function serializeElementNode(
   }
   // block element
   if (needBlock) {
-    const { width, height } = n.getBoundingClientRect();
+    const { width, height, bottom, left, right, top, x, y } =
+      n.getBoundingClientRect();
     attributes = {
       class: attributes.class,
       rr_width: `${width}px`,
       rr_height: `${height}px`,
+      c_rr_top: `${top}px`,
+      c_rr_left: `${left}px`,
+      c_rr_bottom: `${bottom}px`,
+      c_rr_right: `${right}px`,
+      c_rr_x: `${x}px`,
+      c_rr_y: `${y}px`,
     };
   }
   // iframe
