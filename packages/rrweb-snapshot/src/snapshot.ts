@@ -1030,6 +1030,7 @@ export function serializeNodeWithId(
       stylesheetLoadTimeout,
       keepIframeSrcFn,
       cssCaptured: false,
+      captureBlockBoundingBoxes,
     };
 
     if (
@@ -1128,6 +1129,7 @@ export function serializeNodeWithId(
             onStylesheetLoad,
             stylesheetLoadTimeout,
             keepIframeSrcFn,
+            captureBlockBoundingBoxes,
           });
 
           if (serializedIframeNode) {
@@ -1180,6 +1182,7 @@ export function serializeNodeWithId(
             onStylesheetLoad,
             stylesheetLoadTimeout,
             keepIframeSrcFn,
+            captureBlockBoundingBoxes,
           });
 
           if (serializedLinkNode) {
