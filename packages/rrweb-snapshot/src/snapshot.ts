@@ -410,6 +410,7 @@ function serializeNode(
      */
     newlyAddedElement?: boolean;
     cssCaptured?: boolean;
+    captureBlockBoundingBoxes?: boolean;
   },
 ): serializedNode | false {
   const {
@@ -428,6 +429,7 @@ function serializeNode(
     keepIframeSrcFn,
     newlyAddedElement = false,
     cssCaptured = false,
+    captureBlockBoundingBoxes = false,
   } = options;
   // Only record root id when document object is not the base document
   const rootId = getRootId(doc, mirror);
@@ -467,6 +469,7 @@ function serializeNode(
         keepIframeSrcFn,
         newlyAddedElement,
         rootId,
+        captureBlockBoundingBoxes,
       });
     case n.TEXT_NODE:
       return serializeTextNode(n as Text, {
@@ -572,6 +575,7 @@ function serializeElementNode(
      */
     newlyAddedElement?: boolean;
     rootId: number | undefined;
+    captureBlockBoundingBoxes?: boolean;
   },
 ): serializedNode | false {
   const {
@@ -587,6 +591,7 @@ function serializeElementNode(
     keepIframeSrcFn,
     newlyAddedElement = false,
     rootId,
+    captureBlockBoundingBoxes = false,
   } = options;
   const needBlock = _isBlockedElement(n, blockClass, blockSelector);
   const tagName = getValidTagName(n);
@@ -703,6 +708,23 @@ function serializeElementNode(
       rr_width: `${width}px`,
       rr_height: `${height}px`,
     };
+  } else if (captureBlockBoundingBoxes) {
+    try {
+      const { bottom, left, right, top, x, y, width, height } =
+        n.getBoundingClientRect();
+
+      attributes = {
+        ...attributes,
+        c_rr_top: `${top}px`,
+        c_rr_left: `${left}px`,
+        c_rr_bottom: `${bottom}px`,
+        c_rr_right: `${right}px`,
+        c_rr_x: `${x}px`,
+        c_rr_y: `${y}px`,
+        c_rr_width: `${width}px`,
+        c_rr_height: `${height}px`,
+      };
+    } catch (e) {}
   }
   // iframe
   if (tagName === 'iframe' && !keepIframeSrcFn(attributes.src as string)) {
@@ -868,6 +890,7 @@ export function serializeNodeWithId(
     ) => unknown;
     stylesheetLoadTimeout?: number;
     cssCaptured?: boolean;
+    captureBlockBoundingBoxes?: boolean;
   },
 ): serializedNodeWithId | null {
   const {
@@ -894,6 +917,7 @@ export function serializeNodeWithId(
     keepIframeSrcFn = () => false,
     newlyAddedElement = false,
     cssCaptured = false,
+    captureBlockBoundingBoxes = false,
   } = options;
   let { needsMask } = options;
   let { preserveWhiteSpace = true } = options;
@@ -925,6 +949,7 @@ export function serializeNodeWithId(
     keepIframeSrcFn,
     newlyAddedElement,
     cssCaptured,
+    captureBlockBoundingBoxes,
   });
   if (!_serializedNode) {
     if (isDebug()) console.warn(n, 'not serialized');
@@ -1005,6 +1030,7 @@ export function serializeNodeWithId(
       stylesheetLoadTimeout,
       keepIframeSrcFn,
       cssCaptured: false,
+      captureBlockBoundingBoxes,
     };
 
     if (
@@ -1103,6 +1129,7 @@ export function serializeNodeWithId(
             onStylesheetLoad,
             stylesheetLoadTimeout,
             keepIframeSrcFn,
+            captureBlockBoundingBoxes,
           });
 
           if (serializedIframeNode) {
@@ -1155,6 +1182,7 @@ export function serializeNodeWithId(
             onStylesheetLoad,
             stylesheetLoadTimeout,
             keepIframeSrcFn,
+            captureBlockBoundingBoxes,
           });
 
           if (serializedLinkNode) {
@@ -1201,6 +1229,7 @@ function snapshot(
     ) => unknown;
     stylesheetLoadTimeout?: number;
     keepIframeSrcFn?: KeepIframeSrcFn;
+    captureBlockBoundingBoxes?: boolean;
   },
 ): serializedNodeWithId | null {
   const {
@@ -1224,6 +1253,7 @@ function snapshot(
     onStylesheetLoad,
     stylesheetLoadTimeout,
     keepIframeSrcFn = () => false,
+    captureBlockBoundingBoxes = false,
   } = options || {};
   const maskInputOptions: MaskInputOptions =
     maskAllInputs === true
@@ -1292,6 +1322,7 @@ function snapshot(
     stylesheetLoadTimeout,
     keepIframeSrcFn,
     newlyAddedElement: false,
+    captureBlockBoundingBoxes,
   });
 }
 

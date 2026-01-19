@@ -74,6 +74,7 @@ export type recordOptions<T> = {
   mousemoveWait?: number;
   keepIframeSrcFn?: KeepIframeSrcFn;
   errorHandler?: ErrorHandler;
+  captureBlockBoundingBoxes?: boolean;
 };
 
 export type observerParam = {
@@ -126,6 +127,7 @@ export type observerParam = {
     callback: (...arg: Array<unknown>) => void;
     options: unknown;
   }>;
+  captureBlockBoundingBoxes?: boolean;
 };
 
 export type MutationBufferParam = Pick<
@@ -151,6 +153,7 @@ export type MutationBufferParam = Pick<
   | 'shadowDomManager'
   | 'canvasManager'
   | 'processedNodeManager'
+  | 'captureBlockBoundingBoxes'
 >;
 
 export type ReplayPlugin = {
