@@ -266,6 +266,11 @@ export default class MutationBuffer {
   public reset() {
     this.shadowDomManager.reset();
     this.canvasManager.reset();
+    this.unregisterBuffer();
+  }
+
+  private unregisterBuffer() {
+    mutationRateLimiter.unregisterBuffer(this.bufId);
   }
 
   private stormBatches: StormBatch[] = [];
@@ -387,8 +392,8 @@ export default class MutationBuffer {
         muts.length >= this.stormSettings.batchSize
       ) {
         this.handleStormMutations(muts);
+        return;
       }
-      return;
     }
 
     // const start = performance.now();
@@ -963,7 +968,7 @@ export default class MutationBuffer {
             isIgnored(n, this.mirror, this.slimDOMOptions) ||
             !isSerialized(n, this.mirror)
           ) {
-            return;
+            continue;
           }
 
           // removed node has not been serialized yet, just remove it from the Set

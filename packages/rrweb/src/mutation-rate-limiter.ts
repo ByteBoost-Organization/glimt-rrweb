@@ -61,6 +61,11 @@ class MutationRateLimiter {
     this.currentStormStartedAt = -1;
   }
 
+ public unregisterBuffer(bufId: string) {
+  if(!bufId || !(bufId in this.handleStormFinishMethods)) return;
+  delete this.handleStormFinishMethods[bufId];
+ }
+
   private stormStopped(stoppedByBuffer?: string) {
     if (this.debounceTimeout) clearTimeout(this.debounceTimeout);
     this.inGlobalStorm = false;
