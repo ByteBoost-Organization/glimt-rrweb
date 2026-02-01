@@ -589,6 +589,13 @@ export class Replayer {
     );
   }
 
+  public removeEvents(indexSpan: [number, number]) {
+    this.service.send({
+      type: 'REMOVE_EVENTS',
+      payload: { indexSpan },
+    });
+  }
+
   public enableInteract() {
     this.iframe.setAttribute('scrolling', 'auto');
     this.iframe.style.pointerEvents = 'auto';
